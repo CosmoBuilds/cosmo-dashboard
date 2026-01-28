@@ -1,0 +1,76 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "Stock Tracker",
+      "description": "Real-time stock monitoring dashboard",
+      "status": "complete",
+      "created": "2026-01-26"
+    },
+    {
+      "id": 2,
+      "name": "Influencer Dashboard",
+      "description": "Crypto influencer tracking system",
+      "status": "complete",
+      "created": "2026-01-26"
+    },
+    {
+      "id": 3,
+      "name": "Server Migration",
+      "description": "AWS to madserver migration",
+      "status": "complete",
+      "created": "2026-01-27"
+    },
+    {
+      "id": 4,
+      "name": "Cosmo Dashboard",
+      "description": "Project management command center",
+      "status": "complete",
+      "created": "2026-01-27"
+    },
+    {
+      "id": 5,
+      "name": "Email Integration",
+      "description": "Gmail API monitoring system",
+      "status": "complete",
+      "created": "2026-01-27"
+    },
+    {
+      "id": 6,
+      "name": "AI Workforce",
+      "description": "GPT-4o-mini integration for routine tasks",
+      "status": "planning",
+      "created": "2026-01-27"
+    }
+  ],
+  "tasks": [
+    { "id": 1, "title": "Migrate from AWS to madserver", "project": "Server Migration", "priority": "high", "done": true },
+    { "id": 2, "title": "Set up UFW firewall", "project": "Server Migration", "priority": "high", "done": true },
+    { "id": 3, "title": "Configure Fail2ban", "project": "Server Migration", "priority": "high", "done": true },
+    { "id": 4, "title": "Harden SSH (keys only)", "project": "Server Migration", "priority": "high", "done": true },
+    { "id": 5, "title": "Move Docker to /mnt/data", "project": "Server Migration", "priority": "medium", "done": true },
+    { "id": 6, "title": "Move AMP to /mnt/data", "project": "Server Migration", "priority": "medium", "done": true },
+    { "id": 7, "title": "Build Command Center UI", "project": "Cosmo Dashboard", "priority": "high", "done": true },
+    { "id": 8, "title": "Add project tracking", "project": "Cosmo Dashboard", "priority": "medium", "done": true },
+    { "id": 9, "title": "Add task management", "project": "Cosmo Dashboard", "priority": "medium", "done": true },
+    { "id": 10, "title": "Set up Gmail OAuth", "project": "Email Integration", "priority": "high", "done": true },
+    { "id": 11, "title": "Create email checker script", "project": "Email Integration", "priority": "high", "done": true },
+    { "id": 12, "title": "Get OpenAI API key", "project": "AI Workforce", "priority": "high", "done": false },
+    { "id": 13, "title": "Set up GPT-4o-mini for routine tasks", "project": "AI Workforce", "priority": "high", "done": false },
+    { "id": 14, "title": "Create task delegation system", "project": "AI Workforce", "priority": "medium", "done": false }
+  ],
+  "logs": [
+    { "time": "2026-01-27T20:01:00-05:00", "type": "success", "message": "📧 Gmail API integration complete!" },
+    { "time": "2026-01-27T19:56:00-05:00", "type": "success", "message": "Gmail OAuth token received" },
+    { "time": "2026-01-27T19:49:00-05:00", "type": "info", "message": "Google OAuth credentials configured" },
+    { "time": "2026-01-27T19:37:00-05:00", "type": "success", "message": "🚀 Cosmo Dashboard deployed via Cloudflare" },
+    { "time": "2026-01-27T19:35:00-05:00", "type": "success", "message": "Cosmo Dashboard server started on port 8095" },
+    { "time": "2026-01-27T19:19:00-05:00", "type": "success", "message": "📦 AMP migrated to /mnt/data (36GB freed)" },
+    { "time": "2026-01-27T19:07:00-05:00", "type": "success", "message": "🐳 Docker migrated to /mnt/data (20GB freed)" },
+    { "time": "2026-01-27T18:46:00-05:00", "type": "success", "message": "🔐 SSH hardened - password auth disabled" },
+    { "time": "2026-01-27T18:34:00-05:00", "type": "success", "message": "🛡️ Fail2ban configured and running" },
+    { "time": "2026-01-27T18:32:00-05:00", "type": "success", "message": "🔥 UFW firewall enabled" },
+    { "time": "2026-01-27T18:29:00-05:00", "type": "success", "message": "🎉 Migration complete - Cosmo now lives on madserver!" },
+    { "time": "2026-01-27T17:45:00-05:00", "type": "info", "message": "☁️ AWS instance stopped - goodbye cloud!" }
+  ]
+}

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmo Command Center</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h1>Cosmo Command Center</h1>
+            </div>
+            <div class="header-stats">
+                <div class="stat">
+                    <span class="stat-value" id="active-projects">0</span>
+                    <span class="stat-label">Active Projects</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="tasks-today">0</span>
+                    <span class="stat-label">Tasks Today</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="system-status">●</span>
+                    <span class="stat-label">System Status</span>
+                </div>
+            </div>
+            <div class="header-time">
+                <span id="current-time"></span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav">
+                    <button class="nav-btn active" data-view="overview">
+                        <span>📊</span> Overview
+                    </button>
+                    <button class="nav-btn" data-view="projects">
+                        <span>📁</span> Projects
+                    </button>
+                    <button class="nav-btn" data-view="tasks">
+                        <span>✅</span> Tasks
+                    </button>
+                    <button class="nav-btn" data-view="agents">
+                        <span>🤖</span> Workforce
+                    </button>
+                    <button class="nav-btn" data-view="logs">
+                        <span>📝</span> Activity Log
+                    </button>
+                    <button class="nav-btn" data-view="settings">
+                        <span>⚙️</span> Settings
+                    </button>
+                </nav>
+                
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="action-btn" onclick="createProject()">+ New Project</button>
+                    <button class="action-btn" onclick="createTask()">+ New Task</button>
+                    <button class="action-btn" onclick="checkEmails()">📧 Check Email</button>
+                    <button class="action-btn" onclick="systemHealth()">🏥 Health Check</button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Overview View -->
+                <section id="overview-view" class="view active">
+                    <h2>Dashboard Overview</h2>
+                    
+                    <div class="overview-grid">
+                        <!-- System Status Card -->
+                        <div class="card system-card">
+                            <h3>🖥️ System Status</h3>
+                            <div class="system-stats">
+                                <div class="sys-stat">
+                                    <span class="sys-label">Host</span>
+                                    <span class="sys-value" id="sys-host">madserver</span>
+                                </div>
+                                <div class="sys-stat">
+                                    <span class="sys-label">CPU</span>
+                                    <span class="sys-value" id="sys-cpu">--</span>
+                                </div>
+                                <div class="sys-stat">
+                                    <span class="sys-label">Memory</span>
+                                    <span class="sys-value" id="sys-mem">--</span>
+                                </div>
+                                <div class="sys-stat">
+                                    <span class="sys-label">Disk</span>
+                                    <span class="sys-value" id="sys-disk">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity Card -->
+                        <div class="card activity-card">
+                            <h3>📋 Recent Activity</h3>
+                            <div class="activity-list" id="activity-list">
+                                <div class="activity-item">
+                                    <span class="activity-icon">📧</span>
+                                    <span class="activity-text">Gmail API integration complete!</span>
+                                    <span class="activity-time">8:01 PM</span>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="activity-icon">🚀</span>
+                                    <span class="activity-text">Dashboard deployed via Cloudflare</span>
+                                    <span class="activity-time">7:37 PM</span>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="activity-icon">🎉</span>
+                                    <span class="activity-text">Migrated to madserver - AWS killed!</span>
+                                    <span class="activity-time">6:29 PM</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Projects Preview -->
+                        <div class="card projects-preview">
+                            <h3>📁 Active Projects</h3>
+                            <div class="projects-list" id="projects-preview-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Tasks -->
+                        <div class="card tasks-preview">
+                            <h3>✅ Upcoming Tasks</h3>
+                            <div class="tasks-list" id="tasks-preview-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Projects View -->
+                <section id="projects-view" class="view">
+                    <div class="view-header">
+                        <h2>Projects</h2>
+                        <button class="btn-primary" onclick="createProject()">+ New Project</button>
+                    </div>
+                    <div class="projects-board" id="projects-board">
+                        <!-- Project columns -->
+                        <div class="project-column" data-status="planning">
+                            <h3>📋 Planning</h3>
+                            <div class="column-items" id="col-planning"></div>
+                        </div>
+                        <div class="project-column" data-status="in-progress">
+                            <h3>🔨 In Progress</h3>
+                            <div class="column-items" id="col-in-progress"></div>
+                        </div>
+                        <div class="project-column" data-status="review">
+                            <h3>👀 Review</h3>
+                            <div class="column-items" id="col-review"></div>
+                        </div>
+                        <div class="project-column" data-status="complete">
+                            <h3>✅ Complete</h3>
+                            <div class="column-items" id="col-complete"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tasks View -->
+                <section id="tasks-view" class="view">
+                    <div class="view-header">
+                        <h2>Tasks</h2>
+                        <button class="btn-primary" onclick="createTask()">+ New Task</button>
+                    </div>
+                    <div class="tasks-container" id="tasks-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Agents/Workforce View -->
+                <section id="agents-view" class="view">
+                    <div class="view-header">
+                        <h2>🤖 AI Workforce</h2>
+                        <button class="btn-primary" onclick="deployAgent()">+ Deploy Agent</button>
+                    </div>
+                    <div class="agents-grid" id="agents-grid">
+                        <div class="agent-card ceo">
+                            <div class="agent-avatar">👑</div>
+                            <h3>Cosmo</h3>
+                            <span class="agent-role">CEO / Main Brain</span>
+                            <span class="agent-status online">● Online</span>
+                            <div class="agent-stats">
+                                <div>Tasks: <strong>∞</strong></div>
+                                <div>Uptime: <strong id="cosmo-uptime">--</strong></div>
+                            </div>
+                        </div>
+                        <div class="agent-card placeholder">
+                            <div class="agent-avatar">➕</div>
+                            <h3>Deploy Agent</h3>
+                            <span class="agent-role">Coming Soon</span>
+                            <p class="agent-desc">Connect ChatGPT, Codex, or other AI workers</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Activity Log View -->
+                <section id="logs-view" class="view">
+                    <div class="view-header">
+                        <h2>📝 Activity Log</h2>
+                        <button class="btn-secondary" onclick="exportLogs()">Export</button>
+                    </div>
+                    <div class="logs-container" id="logs-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Settings View -->
+                <section id="settings-view" class="view">
+                    <h2>⚙️ Settings & API Integrations</h2>
+                    <div class="settings-grid">
+                        <!-- Email Integration -->
+                        <div class="settings-card">
+                            <h3>📧 Gmail API</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Account: cosmobowz@gmail.com</p>
+                            <p>Monitoring: jwelshkoiii@outlook.com</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">OAuth 2.0 • Read-only access</p>
+                        </div>
+                        <!-- Discord -->
+                        <div class="settings-card">
+                            <h3>💬 Discord API</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Bot: Cosmo#2780</p>
+                            <p>Server: Bowz's Server</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Via Clawdbot Gateway</p>
+                        </div>
+                        <!-- Anthropic -->
+                        <div class="settings-card">
+                            <h3>🧠 Anthropic API</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Model: Claude Opus 4</p>
+                            <p>Role: Primary Brain (CEO)</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Via Clawdbot • Thinking enabled</p>
+                        </div>
+                        <!-- CoinGecko -->
+                        <div class="settings-card">
+                            <h3>📈 CoinGecko API</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Access: Free tier</p>
+                            <p>Used by: Price alerts, Stock Tracker</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">No API key required</p>
+                        </div>
+                        <!-- Yahoo Finance -->
+                        <div class="settings-card">
+                            <h3>📊 Yahoo Finance API</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Access: Unofficial proxy</p>
+                            <p>Used by: Stock Tracker</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Charts, quotes, earnings</p>
+                        </div>
+                        <!-- Brave Search -->
+                        <div class="settings-card">
+                            <h3>🔍 Brave Search API</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Access: Via Clawdbot</p>
+                            <p>Used by: Web searches</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Web research capability</p>
+                        </div>
+                        <!-- Cloudflare -->
+                        <div class="settings-card">
+                            <h3>☁️ Cloudflare Tunnel</h3>
+                            <p style="color: var(--accent-green);">● Active</p>
+                            <p>Type: Quick tunnel (free)</p>
+                            <p>Exposes: Dashboard (8095)</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">URL changes on restart</p>
+                        </div>
+                        <!-- Playit -->
+                        <div class="settings-card">
+                            <h3>🎮 Playit.gg</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>Stock Tracker: stocktracker.playit.plus</p>
+                            <p>Influencer: influencertracker.playit.plus</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Persistent tunnel URLs</p>
+                        </div>
+                        <!-- Tailscale -->
+                        <div class="settings-card">
+                            <h3>🔒 Tailscale VPN</h3>
+                            <p style="color: var(--accent-green);">● Connected</p>
+                            <p>IP: 100.79.187.66</p>
+                            <p>Network: jwelshkoiii@</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Secure mesh network</p>
+                        </div>
+                        <!-- OpenAI - Pending -->
+                        <div class="settings-card" style="opacity: 0.7;">
+                            <h3>🤖 OpenAI API</h3>
+                            <p style="color: var(--accent-yellow);">○ Pending Setup</p>
+                            <p>Model: GPT-4o-mini (planned)</p>
+                            <p>Role: Task delegation worker</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Awaiting API key</p>
+                        </div>
+                        <!-- GitHub - Not Connected -->
+                        <div class="settings-card" style="opacity: 0.7;">
+                            <h3>🐙 GitHub API</h3>
+                            <p style="color: var(--text-secondary);">○ Not Connected</p>
+                            <p>For: Repo management, CI/CD</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Optional integration</p>
+                        </div>
+                        <!-- Twitter - Not Connected -->
+                        <div class="settings-card" style="opacity: 0.7;">
+                            <h3>🐦 Twitter/X API</h3>
+                            <p style="color: var(--text-secondary);">○ Not Connected</p>
+                            <p>For: Social monitoring</p>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Optional integration</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Modal</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
