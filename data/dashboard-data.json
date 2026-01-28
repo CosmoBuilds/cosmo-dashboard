@@ -1,240 +1,34 @@
 {
   "projects": [
-    {
-      "id": 1,
-      "name": "Stock Tracker",
-      "description": "Real-time stock monitoring dashboard",
-      "status": "complete",
-      "created": "2026-01-26"
-    },
-    {
-      "id": 2,
-      "name": "Influencer Dashboard",
-      "description": "Crypto influencer tracking system",
-      "status": "complete",
-      "created": "2026-01-26"
-    },
-    {
-      "id": 3,
-      "name": "Server Migration",
-      "description": "AWS to madserver migration",
-      "status": "complete",
-      "created": "2026-01-27"
-    },
-    {
-      "id": 4,
-      "name": "Cosmo Dashboard",
-      "description": "Project management command center",
-      "status": "complete",
-      "created": "2026-01-27"
-    },
-    {
-      "id": 5,
-      "name": "Email Integration",
-      "description": "Gmail API monitoring system",
-      "status": "complete",
-      "created": "2026-01-27"
-    },
-    {
-      "id": 6,
-      "name": "GitHub Setup",
-      "description": "CosmoBuilds GitHub account & repos",
-      "status": "complete",
-      "created": "2026-01-27"
-    },
-    {
-      "id": 7,
-      "name": "AI Workforce",
-      "description": "GPT-4o-mini integration for tasks",
-      "status": "in-progress",
-      "created": "2026-01-27"
-    }
+    {"id": 1, "name": "Stock Tracker", "description": "Real-time stock monitoring dashboard", "status": "complete", "created": "2026-01-26"},
+    {"id": 2, "name": "Influencer Dashboard", "description": "Crypto influencer tracking system", "status": "complete", "created": "2026-01-26"},
+    {"id": 3, "name": "Server Migration", "description": "AWS to madserver migration", "status": "complete", "created": "2026-01-27"},
+    {"id": 4, "name": "Cosmo Dashboard", "description": "Project management command center", "status": "complete", "created": "2026-01-27"},
+    {"id": 5, "name": "Email Integration", "description": "Gmail API monitoring system", "status": "complete", "created": "2026-01-27"},
+    {"id": 6, "name": "GitHub Setup", "description": "CosmoBuilds GitHub account & repos", "status": "complete", "created": "2026-01-27"},
+    {"id": 7, "name": "AI Workforce", "description": "Local LLMs + GPT-4o-mini team", "status": "complete", "created": "2026-01-27"},
+    {"id": 8, "name": "Trading Research", "description": "Support/Resistance, MAs, Risk/Reward analysis", "status": "in-progress", "created": "2026-01-27"}
   ],
   "tasks": [
-    {
-      "id": 1,
-      "title": "Migrate from AWS to madserver",
-      "project": "Server Migration",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 2,
-      "title": "Set up UFW firewall",
-      "project": "Server Migration",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 3,
-      "title": "Configure Fail2ban",
-      "project": "Server Migration",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 4,
-      "title": "Harden SSH (keys only)",
-      "project": "Server Migration",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 5,
-      "title": "Move Docker to /mnt/data",
-      "project": "Server Migration",
-      "priority": "medium",
-      "done": true
-    },
-    {
-      "id": 6,
-      "title": "Move AMP to /mnt/data",
-      "project": "Server Migration",
-      "priority": "medium",
-      "done": true
-    },
-    {
-      "id": 7,
-      "title": "Build Command Center UI",
-      "project": "Cosmo Dashboard",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 8,
-      "title": "Set up Gmail OAuth",
-      "project": "Email Integration",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 9,
-      "title": "Create GitHub account (CosmoBuilds)",
-      "project": "GitHub Setup",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 10,
-      "title": "Push cosmo-dashboard repo",
-      "project": "GitHub Setup",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 11,
-      "title": "Add OpenAI API key",
-      "project": "AI Workforce",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 12,
-      "title": "Fund OpenAI account",
-      "project": "AI Workforce",
-      "priority": "high",
-      "done": true
-    },
-    {
-      "id": 13,
-      "title": "Generate Cosmo avatar with DALL-E",
-      "project": "AI Workforce",
-      "priority": "medium",
-      "done": true
-    },
-    {
-      "id": 14,
-      "title": "Set up GPT-4o-mini task delegation",
-      "project": "AI Workforce",
-      "priority": "medium",
-      "done": false
-    }
+    {"id": 1, "title": "Trading Research Report", "project": "Trading Research", "priority": "high", "done": false, "due": "2026-01-28T16:00:00-05:00"},
+    {"id": 2, "title": "Upload team avatars to GitHub", "project": "AI Workforce", "priority": "medium", "done": false, "due": "2026-01-28T19:00:00-05:00"}
   ],
   "logs": [
-    {
-      "time": "2026-01-28T02:16:28.032Z",
-      "type": "success",
-      "message": "⚡ Pixel automation service activated!"
-    },
-    {
-      "time": "2026-01-28T02:15:55.580Z",
-      "type": "success",
-      "message": "🤖 Team avatars generated - Cosmo, Pixel, Nova, Spark!"
-    },
-    {
-      "time": "2026-01-28T02:11:02.919Z",
-      "type": "success",
-      "message": "✅ Llama 3.1 8B installed! Downloading Mistral 7B..."
-    },
-    {
-      "time": "2026-01-28T02:08:08.708Z",
-      "type": "info",
-      "message": "⬇️ Downloading Llama 3.1 8B (~5GB)..."
-    },
-    {
-      "time": "2026-01-28T02:05:55.416Z",
-      "type": "info",
-      "message": "🔧 Installing Ollama + local LLMs..."
-    },
-    {
-      "time": "2026-01-28T01:52:56.365Z",
-      "type": "success",
-      "message": "📊 Dashboard updated - Pixel deployed to workforce!"
-    },
-    {
-      "time": "2026-01-28T01:52:30.287Z",
-      "type": "success",
-      "message": "🤖 Pixel (GPT-4o-mini worker) deployed and online!"
-    },
-    {
-      "time": "2026-01-28T01:47:07.074Z",
-      "type": "success",
-      "message": "Task \"Fund OpenAI account\" completed"
-    },
-    {
-      "time": "2026-01-27T20:40:00-05:00",
-      "type": "info",
-      "message": "OpenAI API key added - needs billing"
-    },
-    {
-      "time": "2026-01-27T20:26:00-05:00",
-      "type": "success",
-      "message": "🐙 First repo pushed to GitHub!"
-    },
-    {
-      "time": "2026-01-27T20:25:00-05:00",
-      "type": "success",
-      "message": "GitHub account created: CosmoBuilds"
-    },
-    {
-      "time": "2026-01-27T20:07:00-05:00",
-      "type": "success",
-      "message": "Dashboard settings page updated"
-    },
-    {
-      "time": "2026-01-27T20:01:00-05:00",
-      "type": "success",
-      "message": "📧 Gmail API integration complete!"
-    },
-    {
-      "time": "2026-01-27T19:37:00-05:00",
-      "type": "success",
-      "message": "🚀 Dashboard deployed via Cloudflare"
-    },
-    {
-      "time": "2026-01-27T19:19:00-05:00",
-      "type": "success",
-      "message": "📦 AMP migrated to /mnt/data (36GB)"
-    },
-    {
-      "time": "2026-01-27T19:07:00-05:00",
-      "type": "success",
-      "message": "🐳 Docker migrated to /mnt/data (20GB)"
-    },
-    {
-      "time": "2026-01-27T18:29:00-05:00",
-      "type": "success",
-      "message": "🎉 Migrated to madserver - AWS killed!"
-    }
+    {"time": "2026-01-27T21:35:00-05:00", "type": "info", "message": "📋 Trading research assigned - due 4PM EST tomorrow"},
+    {"time": "2026-01-27T21:34:00-05:00", "type": "success", "message": "🎉 Team chose their own names: Dash, Lumina, Aidorix"},
+    {"time": "2026-01-27T21:30:00-05:00", "type": "success", "message": "🎨 Team designed their OWN avatars"},
+    {"time": "2026-01-27T21:19:00-05:00", "type": "success", "message": "⚡ Mistral 7B (Aidorix) - ONLINE"},
+    {"time": "2026-01-27T21:10:00-05:00", "type": "success", "message": "🦙 Llama 3.1 8B (Lumina) - ONLINE"},
+    {"time": "2026-01-27T20:40:00-05:00", "type": "success", "message": "🤖 OpenAI API funded - Dash online!"},
+    {"time": "2026-01-27T20:26:00-05:00", "type": "success", "message": "🐙 First repo pushed to GitHub!"},
+    {"time": "2026-01-27T20:01:00-05:00", "type": "success", "message": "📧 Gmail API integration complete!"},
+    {"time": "2026-01-27T19:37:00-05:00", "type": "success", "message": "🚀 Dashboard deployed via Cloudflare"},
+    {"time": "2026-01-27T18:29:00-05:00", "type": "success", "message": "🎉 Migrated to madserver - AWS killed!"}
+  ],
+  "workforce": [
+    {"name": "Cosmo", "model": "Claude Opus", "role": "CEO / Strategy", "status": "online"},
+    {"name": "Dash", "model": "GPT-4o-mini", "role": "Dashboard / Tasks", "status": "online"},
+    {"name": "Lumina", "model": "Llama 3.1 8B", "role": "Research (LOCAL)", "status": "online"},
+    {"name": "Aidorix", "model": "Mistral 7B", "role": "Analysis (LOCAL)", "status": "online"}
   ]
 }
