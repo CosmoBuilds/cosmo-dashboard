@@ -487,3 +487,46 @@ function viewProject(id) {
         </div>
     `);
 }
+
+// Ideas & Tickets
+async function loadIdeas() {
+    try {
+        const response = await fetch('data/ideas.json');
+        const data = await response.json();
+        renderIdeas(data.ideas);
+    } catch (error) {
+        console.log('Ideas not loaded:', error);
+    }
+}
+
+function renderIdeas(ideas) {
+    const container = document.getElementById('ideas-list');
+    if (!container) return;
+    
+    container.innerHTML = ideas.map(idea => `
+        <div class="idea-card priority-${idea.priority}">
+            <div class="idea-header">
+                <span class="idea-title">${idea.title}</span>
+                <span class="idea-status ${idea.status}">${idea.status}</span>
+            </div>
+            <p class="idea-desc">${idea.description}</p>
+            <div class="idea-meta">
+                <span>📅 ${new Date(idea.created).toLocaleDateString()}</span>
+                <span class="idea-assignee">👤 ${idea.assignee}</span>
+                <span>✍️ ${idea.createdBy}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterIdeas(filter) {
+    // Implement filtering
+    console.log('Filter:', filter);
+}
+
+function showNewIdeaForm() {
+    alert('New idea form coming soon!');
+}
+
+// Load ideas on page load
+document.addEventListener('DOMContentLoaded', loadIdeas);

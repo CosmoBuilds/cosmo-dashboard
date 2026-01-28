@@ -236,6 +236,24 @@
                     </div>
                 </section>
 
+                <!-- Ideas View -->
+                <section id="ideas-view" class="view">
+                    <h2>💡 Ideas & Tickets</h2>
+                    <div class="ideas-controls">
+                        <button class="btn-primary" onclick="showNewIdeaForm()">+ New Idea</button>
+                        <select id="ideas-filter" onchange="filterIdeas(this.value)">
+                            <option value="all">All Tickets</option>
+                            <option value="open">Open</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="done">Completed</option>
+                            <option value="bowz">Assigned to Bowz</option>
+                        </select>
+                    </div>
+                    <div class="ideas-list" id="ideas-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
                 <!-- Settings View -->
                 <section id="settings-view" class="view">
                     <h2>⚙️ Settings & API Integrations</h2>

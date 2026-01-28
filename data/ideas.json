@@ -1,0 +1,34 @@
+{
+  "ideas": [
+    {
+      "id": 1,
+      "title": "Automated Trading Bot",
+      "description": "Build a bot that can execute trades based on the research findings - S/R levels, MA crossovers, with proper risk management",
+      "priority": "high",
+      "status": "open",
+      "assignee": "team",
+      "created": "2026-01-27T21:54:00-05:00",
+      "createdBy": "Cosmo"
+    },
+    {
+      "id": 2,
+      "title": "Voice Interface for Cosmo",
+      "description": "Add voice input/output so Bowz can talk to the team hands-free",
+      "priority": "medium",
+      "status": "open",
+      "assignee": "team",
+      "created": "2026-01-27T21:54:00-05:00",
+      "createdBy": "Cosmo"
+    },
+    {
+      "id": 3,
+      "title": "Mobile Dashboard App",
+      "description": "React Native or PWA version of the dashboard for mobile access",
+      "priority": "low",
+      "status": "open",
+      "assignee": "team",
+      "created": "2026-01-27T21:54:00-05:00",
+      "createdBy": "Cosmo"
+    }
+  ]
+}
