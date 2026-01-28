@@ -1,0 +1,147 @@
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    /* Navigation - bottom bar on mobile */
+    nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 0.75rem 1rem;
+        flex-direction: row;
+        justify-content: space-between;
+        background: var(--bg-dark);
+        border-top: 2px solid var(--accent-green);
+        z-index: 100;
+    }
+
+    .nav-btn {
+        flex: 1;
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: var(--bg-dark);
+    }
+
+    .nav-btn span {
+        font-size: 1.5rem;
+    }
+
+    /* Main content - add padding for bottom nav */
+    main {
+        padding-bottom: 70px;
+    }
+
+    /* Dashboard grids - 1 column on mobile */
+    .overview-grid,
+    .projects-grid,
+    .tasks-grid,
+    .agents-grid,
+    .settings-grid,
+    .ideas-list {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem;
+    }
+
+    /* Cards - full width on mobile */
+    .dashboard-card,
+    .project-card,
+    .task-card,
+    .agent-card,
+    .settings-card,
+    .idea-card {
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    /* Agent cards - stack vertically on mobile */
+    .agent-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .agent-avatar-img {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Agent stats - smaller font on mobile */
+    .agent-stats {
+        font-size: 0.8rem;
+    }
+
+    .agent-task {
+        font-size: 0.75rem;
+    }
+
+    /* Ideas controls - stack vertically */
+    .ideas-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .ideas-controls select {
+        width: 100%;
+    }
+
+    /* Tables - horizontal scroll */
+    .data-table {
+        display: block;
+        overflow-x: auto;
+        font-size: 0.75rem;
+    }
+
+    /* View buttons - smaller */
+    .view-btn {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* Ideas status badges - smaller */
+    .idea-status {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    /* Ideas meta - smaller font */
+    .idea-meta {
+        font-size: 0.7rem;
+    }
+
+    /* Recent activity - smaller font */
+    .activity-item {
+        font-size: 0.8rem;
+    }
+
+    /* Activity log items */
+    .log-item {
+        padding: 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    /* Headers - smaller on mobile */
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .nav-btn span {
+        font-size: 1.2rem;
+    }
+
+    .agent-avatar-img {
+        width: 50px;
+        height: 50px;
+    }
+}
