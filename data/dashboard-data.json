@@ -1,19 +1,23 @@
 {
   "projects": [
-    {"id": 1, "name": "Stock Tracker", "description": "Real-time stock monitoring dashboard", "status": "complete", "created": "2026-01-26"},
-    {"id": 2, "name": "Influencer Dashboard", "description": "Crypto influencer tracking system", "status": "complete", "created": "2026-01-26"},
-    {"id": 3, "name": "Server Migration", "description": "AWS to madserver migration", "status": "complete", "created": "2026-01-27"},
-    {"id": 4, "name": "Cosmo Dashboard", "description": "Project management command center", "status": "complete", "created": "2026-01-27"},
-    {"id": 5, "name": "Email Integration", "description": "Gmail API monitoring system", "status": "complete", "created": "2026-01-27"},
-    {"id": 6, "name": "GitHub Setup", "description": "CosmoBuilds GitHub account & repos", "status": "complete", "created": "2026-01-27"},
-    {"id": 7, "name": "AI Workforce", "description": "Local LLMs + GPT-4o-mini team", "status": "complete", "created": "2026-01-27"},
-    {"id": 8, "name": "Trading Research", "description": "Support/Resistance, MAs, Risk/Reward analysis", "status": "in-progress", "created": "2026-01-27"}
+    {"id": 1, "name": "Stock Tracker", "status": "complete", "created": "2026-01-26"},
+    {"id": 2, "name": "Influencer Dashboard", "status": "complete", "created": "2026-01-26"},
+    {"id": 3, "name": "Server Migration", "status": "complete", "created": "2026-01-27"},
+    {"id": 4, "name": "Cosmo Dashboard", "status": "complete", "created": "2026-01-27"},
+    {"id": 5, "name": "Email Integration", "status": "complete", "created": "2026-01-27"},
+    {"id": 6, "name": "GitHub Setup", "status": "complete", "created": "2026-01-27"},
+    {"id": 7, "name": "AI Workforce", "status": "complete", "created": "2026-01-27"},
+    {"id": 8, "name": "Trading Research", "status": "in-progress", "created": "2026-01-27"}
   ],
-  "tasks": [
-    {"id": 1, "title": "Trading Research Report", "project": "Trading Research", "priority": "high", "done": false, "due": "2026-01-28T16:00:00-05:00"},
-    {"id": 2, "title": "Upload team avatars to GitHub", "project": "AI Workforce", "priority": "medium", "done": false, "due": "2026-01-28T19:00:00-05:00"}
-  ],
+  "workforce": {
+    "cosmo": {"status": "online", "task": "🎯 Coordinating trading research"},
+    "dash": {"status": "online", "task": "📊 Logging team activity"},
+    "lumina": {"status": "online", "task": "🔬 Researching Support & Resistance"},
+    "aidorix": {"status": "online", "task": "⏳ Queued: Moving Averages analysis"}
+  },
   "logs": [
+    {"time": "2026-01-27T21:48:00-05:00", "type": "info", "message": "🔬 Lumina started S/R research"},
+    {"time": "2026-01-27T21:45:00-05:00", "type": "info", "message": "🌙 Bowz signed off - research mission begins!"},
     {"time": "2026-01-27T21:35:00-05:00", "type": "info", "message": "📋 Trading research assigned - due 4PM EST tomorrow"},
     {"time": "2026-01-27T21:34:00-05:00", "type": "success", "message": "🎉 Team chose their own names: Dash, Lumina, Aidorix"},
     {"time": "2026-01-27T21:30:00-05:00", "type": "success", "message": "🎨 Team designed their OWN avatars"},
@@ -21,14 +25,6 @@
     {"time": "2026-01-27T21:10:00-05:00", "type": "success", "message": "🦙 Llama 3.1 8B (Lumina) - ONLINE"},
     {"time": "2026-01-27T20:40:00-05:00", "type": "success", "message": "🤖 OpenAI API funded - Dash online!"},
     {"time": "2026-01-27T20:26:00-05:00", "type": "success", "message": "🐙 First repo pushed to GitHub!"},
-    {"time": "2026-01-27T20:01:00-05:00", "type": "success", "message": "📧 Gmail API integration complete!"},
-    {"time": "2026-01-27T19:37:00-05:00", "type": "success", "message": "🚀 Dashboard deployed via Cloudflare"},
     {"time": "2026-01-27T18:29:00-05:00", "type": "success", "message": "🎉 Migrated to madserver - AWS killed!"}
-  ],
-  "workforce": [
-    {"name": "Cosmo", "model": "Claude Opus", "role": "CEO / Strategy", "status": "online"},
-    {"name": "Dash", "model": "GPT-4o-mini", "role": "Dashboard / Tasks", "status": "online"},
-    {"name": "Lumina", "model": "Llama 3.1 8B", "role": "Research (LOCAL)", "status": "online"},
-    {"name": "Aidorix", "model": "Mistral 7B", "role": "Analysis (LOCAL)", "status": "online"}
   ]
 }
