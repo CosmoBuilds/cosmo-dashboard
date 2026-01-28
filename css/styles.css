@@ -657,3 +657,19 @@ body {
         display: none;
     }
 }
+
+/* Team Avatar Images */
+.agent-avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+    border: 3px solid var(--accent-green);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.agent-card.ceo .agent-avatar-img {
+    border-color: gold;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
