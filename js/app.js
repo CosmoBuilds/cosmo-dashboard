@@ -311,7 +311,15 @@ async function submitProject(e) {
     state.projects.push(project);
     closeModal();
     renderAll();
-    saveData();
+    
+    // Save data and wait for it to complete
+    try {
+        await saveData();
+        console.log('Project saved successfully');
+    } catch (err) {
+        console.error('Failed to save project:', err);
+    }
+    
     addLog('success', `Project "${project.name}" created - awaiting evaluation`);
     
     // Notify Cosmo to evaluate
@@ -323,11 +331,16 @@ async function submitProject(e) {
     };
     
     try {
-        await fetch('/api/notify', {
+        const response = await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(notification)
         });
+        if (response.ok) {
+            console.log('Notification sent successfully');
+        } else {
+            console.error('Notification failed:', await response.text());
+        }
     } catch (e) {
         console.log('Project notification queued for Cosmo:', e);
     }
