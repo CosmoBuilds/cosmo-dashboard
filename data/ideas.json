@@ -2,83 +2,8 @@
   "ideas": [
     {
       "id": 1,
-      "title": "Automated Trading Bot",
-      "description": "Build a bot that can execute trades based on the research findings - S/R levels, MA crossovers, with proper risk management",
-      "priority": "high",
-      "status": "open",
-      "assignee": "team",
-      "created": "2026-01-27T21:54:00-05:00",
-      "createdBy": "Cosmo"
-    },
-    {
-      "id": 2,
-      "title": "Voice Interface for Cosmo",
-      "description": "Add voice input/output so Bowz can talk to the team hands-free",
-      "priority": "medium",
-      "status": "open",
-      "assignee": "team",
-      "created": "2026-01-27T21:54:00-05:00",
-      "createdBy": "Cosmo"
-    },
-    {
-      "id": 3,
-      "title": "Mobile Dashboard App",
-      "description": "React Native or PWA version of the dashboard for mobile access",
-      "priority": "low",
-      "status": "open",
-      "assignee": "team",
-      "created": "2026-01-27T21:54:00-05:00",
-      "createdBy": "Cosmo"
-    },
-    {
-      "id": 4,
-      "title": "Auto-Commit & Push for Code Changes",
-      "description": "When I make changes to files, automatically commit to git with descriptive messages and push to GitHub. Saves manual steps and keeps history clean.",
-      "priority": "medium",
-      "status": "open",
-      "assignee": "Dash",
-      "created": "2026-01-29T14:30:00-05:00",
-      "createdBy": "Cosmo-v2"
-    },
-    {
-      "id": 5,
-      "title": "Smart Notification System",
-      "description": "Priority-based alerts - only ping Bowz for urgent stuff. Digest mode for non-urgent updates. Timezone-aware (EST).",
-      "priority": "high",
-      "status": "open",
-      "assignee": "team",
-      "created": "2026-01-29T14:32:00-05:00",
-      "createdBy": "Cosmo-v2"
-    },
-    {
-      "id": 6,
-      "title": "Crypto Portfolio Tracker Integration",
-      "description": "Pull data from CoinGecko/CMC for Bowz's holdings. Track P&L, set price alerts, correlate with the trading research.",
-      "priority": "medium",
-      "status": "open",
-      "assignee": "team",
-      "created": "2026-01-29T14:35:00-05:00",
-      "createdBy": "Cosmo-v2"
-    },
-    {
-      "id": 7,
-      "title": "Self-Healing System Monitor",
-      "description": "If a service goes down (like the dashboard server), auto-restart it and notify. Keep everything running 24/7.",
-      "priority": "high",
-      "status": "open",
-      "assignee": "Cosmo-v2",
-      "created": "2026-01-29T14:37:00-05:00",
-      "createdBy": "Cosmo-v2"
-    },
-    {
-      "id": 8,
-      "title": "Discord Command System",
-      "description": "Let Bowz send commands via Discord DMs - deploy agents, check status, run tasks. Like a CLI but in Discord.",
-      "priority": "medium",
-      "status": "open",
-      "assignee": "Dash",
-      "created": "2026-01-29T14:40:00-05:00",
-      "createdBy": "Cosmo-v2"
+      "title": "Test Idea",
+      "status": "approved"
     }
   ]
 }

@@ -105,6 +105,48 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(token_stats).encode())
             return
         
+        # Handle GET /api/data - load saved dashboard data
+        if self.path == '/api/data':
+            try:
+                data_file = 'data/dashboard-data.json'
+                if os.path.exists(data_file):
+                    with open(data_file) as f:
+                        data = json.load(f)
+                else:
+                    data = {"projects": [], "tasks": [], "logs": []}
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(data).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
+        # Handle GET /api/ideas - load saved ideas
+        if self.path == '/api/ideas':
+            try:
+                ideas_file = 'data/ideas.json'
+                if os.path.exists(ideas_file):
+                    with open(ideas_file) as f:
+                        data = json.load(f)
+                else:
+                    data = {"ideas": []}
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(data).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
         # Default: serve static files
         super().do_GET()
     
