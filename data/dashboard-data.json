@@ -75,19 +75,39 @@
   ],
   "logs": [
     {
-      "time": "2026-01-29T20:15:00-05:00",
+      "time": "2026-01-29T15:25:00-05:00",
       "type": "success",
-      "message": "Dashboard data restored"
+      "message": "Dashboard data restored after testing"
     },
     {
-      "time": "2026-01-29T20:10:00-05:00",
-      "type": "success",
-      "message": "GET endpoints added for data persistence"
-    },
-    {
-      "time": "2026-01-29T20:05:00-05:00",
+      "time": "2026-01-29T15:20:00-05:00",
       "type": "info",
-      "message": "Cache-busting added to force fresh assets"
+      "message": "Duplicate refreshTokenStats function removed"
+    },
+    {
+      "time": "2026-01-27T22:17:00-05:00",
+      "type": "success",
+      "message": "Migrated to madserver - AWS killed!"
+    },
+    {
+      "time": "2026-01-27T21:54:00-05:00",
+      "type": "success",
+      "message": "Ideas & Tickets tab added"
+    },
+    {
+      "time": "2026-01-27T20:00:00-05:00",
+      "type": "info",
+      "message": "Server migration planning started"
+    },
+    {
+      "time": "2026-01-26T18:19:00-05:00",
+      "type": "success",
+      "message": "Stock Tracker dashboard deployed"
+    },
+    {
+      "time": "2026-01-26T13:04:00-05:00",
+      "type": "success",
+      "message": "Influencer Tracker dashboard deployed"
     }
   ]
 }

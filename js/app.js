@@ -827,11 +827,6 @@ function renderTokenStats() {
     }
 }
 
-function refreshTokenStats() {
-    loadTokenStats();
-    addLog('info', 'Token stats refreshed');
-}
-
 // Agent Status Checker
 async function checkAgentStatus() {
     // In a real implementation, this would ping each agent's endpoint
