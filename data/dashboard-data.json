@@ -34,7 +34,7 @@
       "id": 999,
       "name": "TEST PROJECT FROM CURL",
       "description": "Testing if save works",
-      "status": "pending-review",
+      "status": "in-progress",
       "created": "2026-01-29"
     }
   ],

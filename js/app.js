@@ -414,13 +414,14 @@ async function refreshUptime() {
         }
         
         // Render services list
-        const container = document.getElementById('services-list');
+        const container = document.getElementById('services-grid');
         if (container) {
             container.innerHTML = services.map(s => `
                 <div class="service-item">
                     <span class="service-icon">${s.icon}</span>
                     <span class="service-name">${s.name}</span>
                     <span class="service-status ${s.status}">${s.status}</span>
+                    ${s.autoRestart ? '<span class="auto-heal-badge">🤖 Auto</span>' : ''}
                 </div>
             `).join('');
         }
