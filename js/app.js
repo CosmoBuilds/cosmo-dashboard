@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAllData();
     fetchSystemStatus();
     setInterval(fetchSystemStatus, 30000);
+    refreshUptime(); // Load uptime data on startup
 });
 
 // Navigation
@@ -387,6 +388,46 @@ async function fetchSystemStatus() {
         document.getElementById('sys-disk').textContent = data.disk + '%';
     } catch (e) {
         console.log('System status error:', e);
+    }
+}
+
+// ==================== UPTIME MONITORING ====================
+
+async function refreshUptime() {
+    try {
+        const res = await fetch('/api/uptime');
+        const data = await res.json();
+        
+        // Update services count
+        const services = data.services || [];
+        const onlineCount = services.filter(s => s.status === 'online').length;
+        document.getElementById('services-online').textContent = `${onlineCount}/${services.length}`;
+        
+        // Update overall status
+        const overallStatus = document.getElementById('overall-status');
+        if (onlineCount === services.length) {
+            overallStatus.textContent = '🟢';
+            overallStatus.style.color = 'var(--accent-green)';
+        } else {
+            overallStatus.textContent = '🟡';
+            overallStatus.style.color = 'var(--accent-yellow)';
+        }
+        
+        // Render services list
+        const container = document.getElementById('services-list');
+        if (container) {
+            container.innerHTML = services.map(s => `
+                <div class="service-item">
+                    <span class="service-icon">${s.icon}</span>
+                    <span class="service-name">${s.name}</span>
+                    <span class="service-status ${s.status}">${s.status}</span>
+                </div>
+            `).join('');
+        }
+        
+        console.log('✅ Uptime data refreshed');
+    } catch (e) {
+        console.error('Uptime refresh error:', e);
     }
 }
 
