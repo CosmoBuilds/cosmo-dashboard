@@ -325,15 +325,22 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with open(notifications_file, 'w') as f:
                     json.dump(notifications, f, indent=2)
                 
+                # Send response immediately
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"status": "queued"}).encode())
+                try:
+                    self.wfile.write(json.dumps({"status": "queued"}).encode())
+                except:
+                    pass  # Client may have disconnected
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}).encode())
+                try:
+                    self.wfile.write(json.dumps({"error": str(e)}).encode())
+                except:
+                    pass
             return
         
         self.send_response(404)
