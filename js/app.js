@@ -483,14 +483,11 @@ function exportLogs() {
 let dataLoaded = false;
 
 async function saveData() {
-    // Don't save until initial data is loaded
-    if (!dataLoaded) {
-        console.log('Data not loaded yet, skipping save');
-        return;
-    }
+    // Always save - don't skip even if data hasn't loaded
+    // The server will handle it properly
     
     try {
-        await fetch('/api/data', {
+        const response = await fetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -499,8 +496,15 @@ async function saveData() {
                 logs: state.logs
             })
         });
+        
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+        
+        console.log('Data saved successfully');
     } catch (e) {
-        console.log('Could not save to server, using local storage');
+        console.error('Could not save to server:', e);
+        // Fallback to localStorage
         localStorage.setItem('cosmo-data', JSON.stringify({
             projects: state.projects,
             tasks: state.tasks,
