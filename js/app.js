@@ -1,8 +1,9 @@
-// Cosmo Command Center - Main Application
+// Cosmo Dashboard - Main Application with SQLite Backend
 
 // State
 const state = {
     projects: [],
+    ideas: [],
     tasks: [],
     logs: [],
     systemStatus: {}
@@ -13,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     updateTime();
     setInterval(updateTime, 1000);
-    loadData();
+    loadAllData();
     fetchSystemStatus();
-    setInterval(fetchSystemStatus, 30000); // Update every 30s
+    setInterval(fetchSystemStatus, 30000);
 });
 
 // Navigation
@@ -24,8 +25,6 @@ function initNavigation() {
         btn.addEventListener('click', () => {
             const view = btn.dataset.view;
             switchView(view);
-            
-            // Update active state
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         });
@@ -41,104 +40,48 @@ function switchView(viewName) {
 function updateTime() {
     const now = new Date();
     const options = { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit',
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
         timeZone: 'America/New_York'
     };
-    document.getElementById('current-time').textContent = now.toLocaleString('en-US', options) + ' EST';
+    document.getElementById('current-time').textContent = 
+        now.toLocaleString('en-US', options) + ' EST';
 }
 
-// Data Management
-async function loadData() {
+// ==================== DATA LOADING ====================
+
+async function loadAllData() {
     try {
-        const res = await fetch('/api/data');
-        const data = await res.json();
-        state.projects = data.projects || [];
-        state.tasks = data.tasks || [];
-        state.logs = data.logs || [];
-        dataLoaded = true;  // Mark data as loaded
+        // Load projects
+        const projectsRes = await fetch('/api/projects');
+        state.projects = await projectsRes.json();
+        
+        // Load ideas
+        const ideasRes = await fetch('/api/ideas');
+        const ideasData = await ideasRes.json();
+        state.ideas = ideasData.ideas || [];
+        
+        // Load tasks
+        const tasksRes = await fetch('/api/tasks');
+        state.tasks = await tasksRes.json();
+        
+        // Load logs
+        const logsRes = await fetch('/api/logs');
+        state.logs = await logsRes.json();
+        
         renderAll();
+        console.log('✅ All data loaded from SQLite');
     } catch (e) {
-        console.log('Loading default data...');
-        loadDefaultData();
-        dataLoaded = true;  // Even default data counts as loaded
+        console.error('Failed to load data:', e);
     }
-}
-
-function loadDefaultData() {
-    state.projects = [
-        {
-            id: 1,
-            name: 'Stock Tracker',
-            description: 'Real-time stock monitoring dashboard',
-            status: 'complete',
-            created: '2026-01-26'
-        },
-        {
-            id: 2,
-            name: 'Influencer Dashboard',
-            description: 'Crypto influencer tracking system',
-            status: 'complete',
-            created: '2026-01-26'
-        },
-        {
-            id: 3,
-            name: 'Server Migration',
-            description: 'AWS to madserver migration',
-            status: 'complete',
-            created: '2026-01-27'
-        },
-        {
-            id: 4,
-            name: 'Cosmo Dashboard',
-            description: 'Project management command center',
-            status: 'in-progress',
-            created: '2026-01-27'
-        },
-        {
-            id: 5,
-            name: 'Email Integration',
-            description: 'Gmail monitoring and automation',
-            status: 'planning',
-            created: '2026-01-27'
-        },
-        {
-            id: 6,
-            name: 'Self-Healing System Monitor',
-            description: 'Auto-restart services + uptime dashboard tab',
-            status: 'complete',
-            created: '2026-01-29'
-        }
-    ];
-    
-    state.tasks = [
-        { id: 1, title: 'Set up Gmail API', project: 'Email Integration', priority: 'high', done: false },
-        { id: 2, title: 'Add ChatGPT/Codex integration', project: 'Cosmo Dashboard', priority: 'medium', done: false },
-        { id: 3, title: 'Deploy agent workforce', project: 'Cosmo Dashboard', priority: 'medium', done: false },
-        { id: 4, title: 'Security audit complete', project: 'Server Migration', priority: 'high', done: true },
-        { id: 5, title: 'Move Docker to /mnt/data', project: 'Server Migration', priority: 'high', done: true }
-    ];
-    
-    state.logs = [
-        { time: new Date(), type: 'success', message: 'Dashboard initialized' },
-        { time: new Date(Date.now() - 3600000), type: 'success', message: 'Server migration complete' },
-        { time: new Date(Date.now() - 3700000), type: 'info', message: 'AMP data moved to /mnt/data' },
-        { time: new Date(Date.now() - 3800000), type: 'info', message: 'Docker data moved to /mnt/data' },
-        { time: new Date(Date.now() - 7200000), type: 'success', message: 'Security hardening complete' }
-    ];
-    
-    renderAll();
 }
 
 function renderAll() {
     renderProjectsPreview();
-    renderTasksPreview();
     renderProjectsBoard();
+    renderIdeas();
     renderTasks();
+    renderTasksPreview();
     renderLogs();
     updateStats();
 }
@@ -150,7 +93,8 @@ function updateStats() {
         state.tasks.filter(t => !t.done).length;
 }
 
-// Projects
+// ==================== PROJECTS ====================
+
 function renderProjectsPreview() {
     const container = document.getElementById('projects-preview-list');
     const activeProjects = state.projects.filter(p => p.status !== 'complete').slice(0, 3);
@@ -158,7 +102,7 @@ function renderProjectsPreview() {
     container.innerHTML = activeProjects.map(p => `
         <div class="project-card-mini">
             <h4>${p.name}</h4>
-            <p>${p.description}</p>
+            <p>${p.description || ''}</p>
         </div>
     `).join('') || '<p style="color: var(--text-secondary)">No active projects</p>';
 }
@@ -168,7 +112,6 @@ function renderProjectsBoard() {
     
     columns.forEach(status => {
         const container = document.getElementById(`col-${status}`);
-        // Handle the case where pending-review might not have a column yet
         if (!container) return;
         
         const projects = state.projects.filter(p => p.status === status);
@@ -176,15 +119,212 @@ function renderProjectsBoard() {
         container.innerHTML = projects.map(p => `
             <div class="project-card-mini" onclick="viewProject(${p.id})">
                 <h4>${p.name}</h4>
-                <p>${p.description}</p>
+                <p>${p.description || ''}</p>
             </div>
         `).join('') || '<p style="color: var(--text-secondary); font-size: 0.8rem;">No projects</p>';
     });
 }
 
-// Tasks
+async function createProject() {
+    openModal('New Project', `
+        <form onsubmit="submitProject(event)">
+            <div class="form-group">
+                <label>Project Name</label>
+                <input type="text" id="project-name" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="project-desc" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                Create Project
+            </button>
+        </form>
+    `);
+}
+
+async function submitProject(e) {
+    e.preventDefault();
+    
+    const project = {
+        id: Date.now(),
+        name: document.getElementById('project-name').value,
+        description: document.getElementById('project-desc').value,
+        status: 'pending-review',
+        created: new Date().toISOString().split('T')[0]
+    };
+    
+    try {
+        const response = await fetch('/api/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(project)
+        });
+        
+        if (response.ok) {
+            state.projects.unshift(project);
+            closeModal();
+            renderAll();
+            console.log('✅ Project saved to SQLite');
+        } else {
+            console.error('Failed to save project');
+        }
+    } catch (err) {
+        console.error('Error saving project:', err);
+    }
+}
+
+// ==================== IDEAS ====================
+
+function renderIdeas() {
+    const container = document.getElementById('ideas-list');
+    if (!container) return;
+    
+    const filter = document.getElementById('ideas-filter')?.value || 'all';
+    let ideas = state.ideas;
+    
+    if (filter !== 'all') {
+        ideas = ideas.filter(i => i.status === filter);
+    }
+    
+    container.innerHTML = ideas.map(idea => `
+        <div class="idea-card priority-${idea.priority}">
+            <div class="idea-header">
+                <span class="idea-title">${idea.title}</span>
+                <span class="idea-status ${idea.status}">${idea.status}</span>
+            </div>
+            <p class="idea-desc">${idea.description || ''}</p>
+            <div class="idea-meta">
+                <span>👤 ${idea.assignee || 'team'}</span>
+            </div>
+            <div class="idea-actions">
+                ${idea.status !== 'approved' && idea.status !== 'done' ? 
+                    `<button class="btn-small btn-approve" onclick="approveIdea(${idea.id})">✅ Approve</button>` : ''}
+            </div>
+        </div>
+    `).join('') || '<div class="no-ideas">No ideas found</div>';
+}
+
+async function showNewIdeaForm() {
+    openModal('New Idea', `
+        <form onsubmit="submitIdea(event)">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="idea-title" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="idea-desc" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="idea-priority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                Create Idea
+            </button>
+        </form>
+    `);
+}
+
+async function submitIdea(e) {
+    e.preventDefault();
+    
+    const idea = {
+        id: Date.now(),
+        title: document.getElementById('idea-title').value,
+        description: document.getElementById('idea-desc').value,
+        priority: document.getElementById('idea-priority').value,
+        status: 'open',
+        assignee: 'team',
+        created: new Date().toISOString(),
+        createdBy: 'Bowz'
+    };
+    
+    try {
+        const response = await fetch('/api/ideas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(idea)
+        });
+        
+        if (response.ok) {
+            state.ideas.unshift(idea);
+            closeModal();
+            renderIdeas();
+            console.log('✅ Idea saved to SQLite');
+        }
+    } catch (err) {
+        console.error('Error saving idea:', err);
+    }
+}
+
+async function approveIdea(id) {
+    const idea = state.ideas.find(i => i.id === id);
+    if (!idea) return;
+    
+    const plan = generatePlan(idea);
+    
+    try {
+        const response = await fetch(`/api/ideas/${id}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan })
+        });
+        
+        if (response.ok) {
+            idea.status = 'approved';
+            renderIdeas();
+            console.log('✅ Idea approved and notification sent');
+        }
+    } catch (err) {
+        console.error('Error approving idea:', err);
+    }
+}
+
+function generatePlan(idea) {
+    return `**Plan of Attack:**
+1. Analyze requirements
+2. Design architecture  
+3. Implement core functionality
+4. Test thoroughly
+5. Deploy to production
+6. Monitor and iterate`;
+}
+
+function filterIdeas(filter) {
+    renderIdeas();
+}
+
+// ==================== TASKS ====================
+
+function renderTasks() {
+    const container = document.getElementById('tasks-container');
+    if (!container) return;
+    
+    container.innerHTML = state.tasks.map(t => `
+        <div class="task-item">
+            <input type="checkbox" class="task-checkbox" 
+                   onchange="toggleTask(${t.id})" ${t.done ? 'checked' : ''}>
+            <div class="task-content">
+                <div class="task-title" style="${t.done ? 'text-decoration: line-through; opacity: 0.5;' : ''}">
+                    ${t.title}
+                </div>
+                <div class="task-meta">Project: ${t.project || 'General'}</div>
+            </div>
+            <span class="task-priority ${t.priority}">${t.priority}</span>
+        </div>
+    `).join('');
+}
+
 function renderTasksPreview() {
     const container = document.getElementById('tasks-preview-list');
+    if (!container) return;
+    
     const pendingTasks = state.tasks.filter(t => !t.done).slice(0, 4);
     
     container.innerHTML = pendingTasks.map(t => `
@@ -196,40 +336,35 @@ function renderTasksPreview() {
     `).join('') || '<p style="color: var(--text-secondary)">All tasks complete!</p>';
 }
 
-function renderTasks() {
-    const container = document.getElementById('tasks-container');
-    
-    container.innerHTML = state.tasks.map(t => `
-        <div class="task-item">
-            <input type="checkbox" class="task-checkbox" onchange="toggleTask(${t.id})" ${t.done ? 'checked' : ''}>
-            <div class="task-content">
-                <div class="task-title" style="${t.done ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${t.title}</div>
-                <div class="task-meta">Project: ${t.project}</div>
-            </div>
-            <span class="task-priority ${t.priority}">${t.priority}</span>
-        </div>
-    `).join('');
-}
-
-function toggleTask(id) {
-    const task = state.tasks.find(t => t.id === id);
-    if (task) {
-        task.done = !task.done;
-        renderAll();
-        saveData();
-        addLog(task.done ? 'success' : 'info', `Task "${task.title}" ${task.done ? 'completed' : 'reopened'}`);
+async function toggleTask(id) {
+    try {
+        const response = await fetch(`/api/tasks/${id}/toggle`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                task.done = result.done;
+                renderAll();
+            }
+        }
+    } catch (err) {
+        console.error('Error toggling task:', err);
     }
 }
 
-// Logs - EST timezone
+// ==================== ACTIVITY LOG ====================
+
 function renderLogs() {
     const container = document.getElementById('logs-container');
+    if (!container) return;
     
     container.innerHTML = state.logs.map(log => {
-        const time = new Date(log.time).toLocaleTimeString('en-US', { 
+        const time = new Date(log.time).toLocaleTimeString('en-US', {
             timeZone: 'America/New_York',
-            hour: '2-digit',
-            minute: '2-digit'
+            hour: '2-digit', minute: '2-digit'
         });
         return `
             <div class="log-entry">
@@ -238,16 +373,11 @@ function renderLogs() {
                 <span>${log.message}</span>
             </div>
         `;
-    }).join('');
+    }).join('') || '<p style="color: var(--text-secondary)">No activity yet</p>';
 }
 
-function addLog(type, message) {
-    state.logs.unshift({ time: new Date(), type, message });
-    if (state.logs.length > 100) state.logs.pop();
-    renderLogs();
-}
+// ==================== SYSTEM STATUS ====================
 
-// System Status
 async function fetchSystemStatus() {
     try {
         const res = await fetch('/api/system');
@@ -255,15 +385,13 @@ async function fetchSystemStatus() {
         document.getElementById('sys-cpu').textContent = data.cpu + '%';
         document.getElementById('sys-mem').textContent = data.memory + '%';
         document.getElementById('sys-disk').textContent = data.disk + '%';
-        document.getElementById('system-status').textContent = '●';
-        document.getElementById('system-status').style.color = '#3fb950';
     } catch (e) {
-        document.getElementById('system-status').textContent = '●';
-        document.getElementById('system-status').style.color = '#f85149';
+        console.log('System status error:', e);
     }
 }
 
-// Modals
+// ==================== MODALS ====================
+
 function openModal(title, content) {
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-body').innerHTML = content;
@@ -274,991 +402,9 @@ function closeModal() {
     document.getElementById('modal-overlay').classList.remove('active');
 }
 
-// Actions
-function createProject() {
-    openModal('New Project', `
-        <form onsubmit="submitProject(event)">
-            <div class="form-group">
-                <label>Project Name</label>
-                <input type="text" id="project-name" required>
-            </div>
-            <div class="form-group">
-                <label>Description</label>
-                <textarea id="project-desc"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="project-status">
-                    <option value="planning">Planning</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="review">Review</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Create Project</button>
-        </form>
-    `);
-}
-
-async function submitProject(e) {
-    e.preventDefault();
-    const project = {
-        id: Date.now(),
-        name: document.getElementById('project-name').value,
-        description: document.getElementById('project-desc').value,
-        status: 'pending-review',  // Start as pending review
-        created: new Date().toISOString().split('T')[0]
-    };
-    state.projects.push(project);
-    closeModal();
-    renderAll();
-    
-    // Save data and wait for it to complete
-    try {
-        await saveData();
-        console.log('Project saved successfully');
-    } catch (err) {
-        console.error('Failed to save project:', err);
-    }
-    
-    addLog('success', `Project "${project.name}" created - awaiting evaluation`);
-    
-    // Notify Cosmo to evaluate - queue for evaluation
-    const notification = {
-        type: 'project_created',
-        timestamp: new Date().toISOString(),
-        project: project,
-        channel: '1466517317403021362'
-    };
-    
-    try {
-        const response = await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(notification)
-        });
-        if (response.ok) {
-            console.log('Notification queued for evaluation');
-        } else {
-            console.error('Notification failed:', await response.text());
-        }
-    } catch (e) {
-        console.log('Project notification queued for Cosmo:', e);
-    }
-    
-    // Also send immediate Discord notification about pending review
-    try {
-        const discordNotify = {
-            type: 'project_pending_review',
-            timestamp: new Date().toISOString(),
-            project: project,
-            channel: '1466517317403021362',
-            message: `📋 **NEW PROJECT PENDING REVIEW**\n\n**${project.name}**\n${project.description}\n\nStatus: ⏳ Pending Review\nCreated: ${project.created}\n\nCosmo will evaluate and provide recommendations shortly.`
-        };
-        
-        const discordResponse = await fetch('/api/notify-discord', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordNotify)
-        });
-        
-        if (discordResponse.ok) {
-            console.log('Discord notification sent successfully');
-            addLog('success', `Discord notified about project "${project.name}"`);
-        } else {
-            console.error('Discord notification failed:', await discordResponse.text());
-        }
-    } catch (e) {
-        console.log('Discord notification error:', e);
-        // Don't block - the notification is still queued in the file
-    }
-}
-
-function createTask() {
-    const projectOptions = state.projects.map(p => 
-        `<option value="${p.name}">${p.name}</option>`
-    ).join('');
-    
-    openModal('New Task', `
-        <form onsubmit="submitTask(event)">
-            <div class="form-group">
-                <label>Task Title</label>
-                <input type="text" id="task-title" required>
-            </div>
-            <div class="form-group">
-                <label>Project</label>
-                <select id="task-project">
-                    ${projectOptions}
-                    <option value="General">General</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Priority</label>
-                <select id="task-priority">
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Create Task</button>
-        </form>
-    `);
-}
-
-function submitTask(e) {
-    e.preventDefault();
-    const task = {
-        id: Date.now(),
-        title: document.getElementById('task-title').value,
-        project: document.getElementById('task-project').value,
-        priority: document.getElementById('task-priority').value,
-        done: false
-    };
-    state.tasks.push(task);
-    closeModal();
-    renderAll();
-    saveData();
-    addLog('info', `Task "${task.title}" created`);
-}
-
-function checkEmails() {
-    addLog('info', 'Checking emails...');
-    openModal('📧 Email Status', `
-        <div style="text-align: center; padding: 2rem;">
-            <p style="font-size: 3rem; margin-bottom: 1rem;">📧</p>
-            <h3>Email Integration</h3>
-            <p style="color: var(--text-secondary); margin-top: 1rem;">
-                Account: cosmobowz@gmail.com<br>
-                Monitoring: jwelshkoiii@outlook.com
-            </p>
-            <p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                ⚠️ Gmail API setup required
-            </p>
-        </div>
-    `);
-}
-
-function systemHealth() {
-    fetchSystemStatus();
-    addLog('info', 'System health check triggered');
-    openModal('🏥 System Health', `
-        <div style="padding: 1rem;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                    <div style="color: var(--text-secondary); font-size: 0.8rem;">CPU</div>
-                    <div style="font-size: 1.5rem; color: var(--accent-green);" id="modal-cpu">--</div>
-                </div>
-                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                    <div style="color: var(--text-secondary); font-size: 0.8rem;">Memory</div>
-                    <div style="font-size: 1.5rem; color: var(--accent-green);" id="modal-mem">--</div>
-                </div>
-                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                    <div style="color: var(--text-secondary); font-size: 0.8rem;">Disk</div>
-                    <div style="font-size: 1.5rem; color: var(--accent-green);" id="modal-disk">--</div>
-                </div>
-                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                    <div style="color: var(--text-secondary); font-size: 0.8rem;">Host</div>
-                    <div style="font-size: 1.5rem; color: var(--accent-blue);">madserver</div>
-                </div>
-            </div>
-            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(63, 185, 80, 0.1); border: 1px solid var(--accent-green); border-radius: 8px; text-align: center;">
-                ✅ All Systems Operational
-            </div>
-        </div>
-    `);
-    
-    // Update modal with live data
-    fetch('/api/system').then(r => r.json()).then(data => {
-        document.getElementById('modal-cpu').textContent = data.cpu + '%';
-        document.getElementById('modal-mem').textContent = data.memory + '%';
-        document.getElementById('modal-disk').textContent = data.disk + '%';
-    }).catch(() => {});
-}
-
-function deployAgent() {
-    openModal('🤖 Deploy AI Agent', `
-        <div style="text-align: center; padding: 2rem;">
-            <p style="font-size: 3rem; margin-bottom: 1rem;">🤖</p>
-            <h3>AI Workforce Expansion</h3>
-            <p style="color: var(--text-secondary); margin-top: 1rem;">
-                Connect additional AI workers to delegate tasks
-            </p>
-            <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <button class="btn-secondary" disabled>🧠 OpenAI GPT (Coming Soon)</button>
-                <button class="btn-secondary" disabled>💻 Codex CLI (Coming Soon)</button>
-                <button class="btn-secondary" disabled>🔧 Custom Agent (Coming Soon)</button>
-            </div>
-        </div>
-    `);
-}
-
-function exportLogs() {
-    const logText = state.logs.map(l => 
-        `[${new Date(l.time).toISOString()}] [${l.type.toUpperCase()}] ${l.message}`
-    ).join('\n');
-    
-    const blob = new Blob([logText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cosmo-logs-${new Date().toISOString().split('T')[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    addLog('info', 'Logs exported');
-}
-
-// Data Persistence
-let dataLoaded = false;
-
-async function saveData() {
-    // Always save - don't skip even if data hasn't loaded
-    // The server will handle it properly
-    
-    try {
-        const response = await fetch('/api/data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projects: state.projects,
-                tasks: state.tasks,
-                logs: state.logs
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Server returned ${response.status}`);
-        }
-        
-        console.log('Data saved successfully');
-    } catch (e) {
-        console.error('Could not save to server:', e);
-        // Fallback to localStorage
-        localStorage.setItem('cosmo-data', JSON.stringify({
-            projects: state.projects,
-            tasks: state.tasks,
-            logs: state.logs
-        }));
-    }
-}
-
-// Project View
-function viewProject(id) {
-    const project = state.projects.find(p => p.id === id);
-    if (!project) return;
-    
-    const projectTasks = state.tasks.filter(t => t.project === project.name);
-    const tasksList = projectTasks.map(t => `
-        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; margin-bottom: 0.5rem;">
-            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})">
-            <span style="${t.done ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${t.title}</span>
-        </div>
-    `).join('') || '<p style="color: var(--text-secondary)">No tasks yet</p>';
-    
-    openModal(`📁 ${project.name}`, `
-        <div>
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">${project.description}</p>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                <span style="padding: 0.25rem 0.75rem; background: var(--bg-tertiary); border-radius: 4px;">
-                    Status: ${project.status}
-                </span>
-                <span style="padding: 0.25rem 0.75rem; background: var(--bg-tertiary); border-radius: 4px;">
-                    Created: ${project.created}
-                </span>
-            </div>
-            <h4 style="margin-bottom: 0.75rem;">Tasks</h4>
-            ${tasksList}
-        </div>
-    `);
-}
-
-// Ideas & Tickets
-let allIdeas = [];
-
-async function loadIdeas() {
-    try {
-        const response = await fetch('data/ideas.json');
-        const data = await response.json();
-        allIdeas = data.ideas || [];
-        renderIdeas(allIdeas);
-    } catch (error) {
-        console.log('Ideas not loaded:', error);
-        allIdeas = [];
-    }
-}
-
-function renderIdeas(ideas) {
-    const container = document.getElementById('ideas-list');
-    if (!container) return;
-    
-    if (ideas.length === 0) {
-        container.innerHTML = '<div class="no-ideas">No ideas found. Click "+ New Idea" to add one!</div>';
-        return;
-    }
-    
-    container.innerHTML = ideas.map(idea => `
-        <div class="idea-card priority-${idea.priority}">
-            <div class="idea-header">
-                <span class="idea-title">${idea.title}</span>
-                <span class="idea-status ${idea.status}">${idea.status}</span>
-            </div>
-            <p class="idea-desc">${idea.description}</p>
-            <div class="idea-meta">
-                <span>📅 ${new Date(idea.created).toLocaleDateString()}</span>
-                <span class="idea-assignee">👤 ${idea.assignee}</span>
-                <span>✍️ ${idea.createdBy}</span>
-            </div>
-            <div class="idea-actions">
-                ${idea.status !== 'approved' && idea.status !== 'done' ? `<button class="btn-small btn-approve" onclick="approveIdea(${idea.id})">✅ Approve</button>` : ''}
-                <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'in-progress')">Start</button>
-                <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'done')">Complete</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function filterIdeas(filter) {
-    if (filter === 'all') {
-        renderIdeas(allIdeas);
-    } else if (filter === 'bowz') {
-        renderIdeas(allIdeas.filter(i => i.assignee === 'Bowz'));
-    } else {
-        renderIdeas(allIdeas.filter(i => i.status === filter));
-    }
-}
-
-function showNewIdeaForm() {
-    openModal('New Idea / Ticket', `
-        <form onsubmit="submitIdea(event)">
-            <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="idea-title" required placeholder="What's the idea?">
-            </div>
-            <div class="form-group">
-                <label>Description</label>
-                <textarea id="idea-desc" rows="3" placeholder="Describe the idea in detail..."></textarea>
-            </div>
-            <div class="form-group">
-                <label>Priority</label>
-                <select id="idea-priority">
-                    <option value="low">Low</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="high">High</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Assignee</label>
-                <select id="idea-assignee">
-                    <option value="team">Team</option>
-                    <option value="Cosmo">Cosmo</option>
-                    <option value="Dash">Dash</option>
-                    <option value="Lumina">Lumina</option>
-                    <option value="Aidorix">Aidorix</option>
-                    <option value="Bowz">Bowz</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Create Idea</button>
-        </form>
-    `);
-}
-
-function submitIdea(e) {
-    e.preventDefault();
-    
-    const idea = {
-        id: Date.now(),
-        title: document.getElementById('idea-title').value,
-        description: document.getElementById('idea-desc').value,
-        priority: document.getElementById('idea-priority').value,
-        status: 'open',
-        assignee: document.getElementById('idea-assignee').value,
-        created: new Date().toISOString(),
-        createdBy: 'Bowz'
-    };
-    
-    allIdeas.unshift(idea);
-    renderIdeas(allIdeas);
-    saveIdeas();
-    closeModal();
-    addLog('success', `New idea created: "${idea.title}"`);
-}
-
-async function saveIdeas() {
-    try {
-        await fetch('/api/ideas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ideas: allIdeas })
-        });
-    } catch (e) {
-        console.log('Could not save ideas to server:', e);
-    }
-}
-
-function updateIdeaStatus(id, status) {
-    const idea = allIdeas.find(i => i.id === id);
-    if (idea) {
-        idea.status = status;
-        renderIdeas(allIdeas);
-        saveIdeas();
-        addLog('info', `Idea "${idea.title}" marked as ${status}`);
-    }
-}
-
-async function approveIdea(id) {
-    const idea = allIdeas.find(i => i.id === id);
-    if (!idea) return;
-    
-    // Update status
-    idea.status = 'approved';
-    idea.approvedAt = new Date().toISOString();
-    renderIdeas(allIdeas);
-    saveIdeas();
-    addLog('success', `Idea "${idea.title}" approved by Bowz`);
-    
-    // Generate plan and notify
-    const planOfAttack = generatePlanOfAttack(idea);
-    
-    // Write notification to file for Cosmo to pick up
-    const notification = {
-        type: 'idea_approved',
-        timestamp: new Date().toISOString(),
-        idea: idea,
-        plan: planOfAttack,
-        channel: '1466517317403021362'
-    };
-    
-    try {
-        // Save notification to pending file
-        await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(notification)
-        });
-    } catch (e) {
-        console.log('Notification queued for Cosmo:', e);
-    }
-    
-    // Also send immediate Discord notification
-    try {
-        const discordResponse = await fetch('/api/notify-discord', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                idea: idea,
-                plan: planOfAttack,
-                channel: '1466517317403021362'
-            })
-        });
-        
-        if (discordResponse.ok) {
-            console.log('Discord notification sent for approved idea');
-            addLog('success', `Discord notified about approved idea "${idea.title}"`);
-        } else {
-            console.error('Discord notification failed:', await discordResponse.text());
-        }
-    } catch (e) {
-        console.log('Discord notification error:', e);
-    }
-}
-
-function generatePlanOfAttack(idea) {
-    const plans = {
-        'Automated Trading Bot': `**Plan of Attack:**
-1. Research trading APIs (Alpaca, Interactive Brokers)
-2. Design strategy engine with S/R and MA signals
-3. Build risk management module (stop losses, position sizing)
-4. Create backtesting framework
-5. Paper trade for 2 weeks
-6. Deploy with small capital`,
-        
-        'Voice Interface for Cosmo': `**Plan of Attack:**
-1. Integrate speech-to-text (Whisper API or browser Web Speech API)
-2. Add text-to-speech for responses (ElevenLabs or browser)
-3. Create voice command parser
-4. Build wake word detection ("Hey Cosmo")
-5. Test hands-free workflows`,
-        
-        'Mobile Dashboard App': `**Plan of Attack:**
-1. Evaluate PWA vs React Native
-2. Port existing HTML/CSS to mobile framework
-3. Optimize API calls for mobile
-4. Add offline support
-5. Test on iOS/Android
-6. Deploy to app stores`,
-        
-        'Auto-Commit & Push for Code Changes': `**Plan of Attack:**
-1. Create git auto-commit script
-2. Watch filesystem for changes
-3. Generate commit messages using AI
-4. Auto-push to GitHub
-5. Add to dashboard settings
-6. Test with various file types`,
-        
-        'Smart Notification System': `**Plan of Attack:**
-1. Create priority levels (urgent/high/medium/low)
-2. Build digest mode (hourly summaries)
-3. Add timezone handling (EST)
-4. Create quiet hours settings
-5. Build notification queue
-6. Test with various scenarios`,
-        
-        'Crypto Portfolio Tracker Integration': `**Plan of Attack:**
-1. Connect to CoinGecko/CMC APIs
-2. Build portfolio input interface
-3. Calculate P&L with historical prices
-4. Add price alerts (email/Discord)
-5. Correlate with trading research
-6. Create performance charts`,
-        
-        'Self-Healing System Monitor': `**Plan of Attack:**
-1. Build service health checker
-2. Create restart scripts for each service
-3. Add notification on recovery
-4. Log all incidents
-5. Create uptime dashboard
-6. Set up cron jobs for checks`,
-        
-        'Discord Command System': `**Plan of Attack:**
-1. Create DM listener
-2. Parse commands (!deploy, !status, !task)
-3. Build command handlers
-4. Add authentication (verify it's Bowz)
-5. Create help menu
-6. Test all commands`
-    };
-    
-    return plans[idea.title] || `**Plan of Attack:**
-1. Analyze requirements
-2. Design architecture
-3. Implement core functionality
-4. Test thoroughly
-5. Deploy to production
-6. Monitor and iterate`;
-}
-
-// Token & Session Tracker
-let tokenStats = {
-    todayCost: 0,
-    todayTokens: 0,
-    activeSessions: 0,
-    monthCost: 0,
-    models: {},
-    sessions: []
-};
-
-async function loadTokenStats() {
-    try {
-        const response = await fetch('/api/tokens');
-        if (response.ok) {
-            tokenStats = await response.json();
-            renderTokenStats();
-        }
-    } catch (e) {
-        console.log('Token stats not available:', e);
-        // Use mock data if API not available
-        useMockTokenData();
-    }
-}
-
-function useMockTokenData() {
-    tokenStats = {
-        todayCost: 0.0234,
-        todayTokens: 15420,
-        activeSessions: 3,
-        monthCost: 0.89,
-        models: {
-            'Claude Opus': { tokens: 8200, cost: 0.0123, calls: 12 },
-            'GPT-4o-mini': { tokens: 4500, cost: 0.0027, calls: 28 },
-            'Llama 3.1 8B': { tokens: 1500, cost: 0.0000, calls: 8 },
-            'Mistral 7B': { tokens: 1220, cost: 0.0000, calls: 5 }
-        },
-        sessions: [
-            { agent: 'Cosmo', model: 'Claude Opus', status: 'active', cost: 0.0089, duration: '45m' },
-            { agent: 'Dash', model: 'GPT-4o-mini', status: 'active', cost: 0.0012, duration: '12m' },
-            { agent: 'Lumina', model: 'Llama 3.1 8B', status: 'idle', cost: 0.0000, duration: '2h 30m' }
-        ]
-    };
-    renderTokenStats();
-}
-
-function refreshTokenStats() {
-    // Show loading state
-    const btn = document.querySelector('button[onclick="refreshTokenStats()"]');
-    if (btn) btn.textContent = '🔄 Refreshing...';
-    
-    // Re-fetch from server
-    loadTokenStats().then(() => {
-        if (btn) btn.textContent = '🔄 Refresh';
-        addLog('info', 'Token stats refreshed');
-    }).catch(() => {
-        if (btn) btn.textContent = '🔄 Refresh';
-        addLog('error', 'Failed to refresh token stats');
-    });
-}
-
-function renderTokenStats() {
-    // Update summary cards
-    document.getElementById('today-cost').textContent = '$' + tokenStats.todayCost.toFixed(4);
-    document.getElementById('today-tokens').textContent = tokenStats.todayTokens.toLocaleString();
-    document.getElementById('active-sessions').textContent = tokenStats.activeSessions;
-    document.getElementById('month-cost').textContent = '$' + tokenStats.monthCost.toFixed(2);
-    
-    // Update model usage
-    const modelList = document.getElementById('model-usage');
-    if (modelList && tokenStats.models) {
-        modelList.innerHTML = Object.entries(tokenStats.models).map(([model, stats]) => `
-            <div class="model-usage-item">
-                <div class="model-name">${model}</div>
-                <div class="model-stats">
-                    ${stats.tokens.toLocaleString()} tokens<br>
-                    $${stats.cost.toFixed(4)} • ${stats.calls} calls
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    // Update recent sessions
-    const sessionsList = document.getElementById('recent-sessions');
-    if (sessionsList && tokenStats.sessions) {
-        sessionsList.innerHTML = tokenStats.sessions.map(session => `
-            <div class="session-item ${session.status}">
-                <div class="session-info">
-                    <span class="session-agent">${session.agent}</span>
-                    <span class="session-model">${session.model} • ${session.duration}</span>
-                </div>
-                <div class="session-cost">$${session.cost.toFixed(4)}</div>
-            </div>
-        `).join('');
-    }
-}
-
-// Agent Status Checker
-async function checkAgentStatus() {
-    // In a real implementation, this would ping each agent's endpoint
-    // For now, simulate based on session activity
-    const agents = ['cosmo', 'dash', 'lumina', 'aidorix'];
-    
-    agents.forEach(agent => {
-        const statusEl = document.querySelector(`#${agent}-task`);
-        const cardEl = document.querySelector(`.agent-card:has(#${agent}-task)`);
-        
-        if (statusEl && cardEl) {
-            // Check if there's recent activity (simulated)
-            const isActive = Math.random() > 0.1; // 90% chance online
-            const statusIndicator = cardEl.querySelector('.agent-status');
-            
-            if (statusIndicator) {
-                if (isActive) {
-                    statusIndicator.className = 'agent-status online';
-                    statusIndicator.textContent = '● Online';
-                } else {
-                    statusIndicator.className = 'agent-status offline';
-                    statusIndicator.textContent = '● Offline';
-                }
-            }
-        }
-    });
-}
-
-// Load ideas on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadIdeas();
-    loadTokenStats();
-    checkAgentStatus();
-    loadUptimeData();
-    // Check agent status every 30 seconds
-    setInterval(checkAgentStatus, 30000);
-    // Check uptime every 30 seconds
-    setInterval(loadUptimeData, 30000);
+// Close modal on outside click
+document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-overlay') closeModal();
 });
 
-// Uptime Monitor
-const defaultServices = [
-    {
-        id: 'clawdbot',
-        name: 'Clawdbot Gateway',
-        icon: '🤖',
-        url: 'http://localhost:3000',
-        checkType: 'http',
-        autoRestart: true,
-        status: 'unknown',
-        uptime: 99.9,
-        lastCheck: null
-    },
-    {
-        id: 'dashboard',
-        name: 'Command Center',
-        icon: '🚀',
-        url: 'http://localhost:8095',
-        checkType: 'http',
-        autoRestart: true,
-        status: 'unknown',
-        uptime: 99.9,
-        lastCheck: null
-    },
-    {
-        id: 'stock-tracker',
-        name: 'Stock Tracker',
-        icon: '📈',
-        url: 'http://stocktracker.playit.plus',
-        checkType: 'http',
-        autoRestart: false,
-        status: 'unknown',
-        uptime: 99.5,
-        lastCheck: null
-    },
-    {
-        id: 'influencer',
-        name: 'Influencer Dashboard',
-        icon: '🎯',
-        url: 'http://influencertracker.playit.plus:12648',
-        checkType: 'http',
-        autoRestart: false,
-        status: 'unknown',
-        uptime: 99.5,
-        lastCheck: null
-    },
-    {
-        id: 'system',
-        name: 'madserver System',
-        icon: '🖥️',
-        url: null,
-        checkType: 'system',
-        autoRestart: false,
-        status: 'unknown',
-        uptime: 99.9,
-        lastCheck: null
-    }
-];
-
-let uptimeData = {
-    services: [...defaultServices],
-    incidents: [],
-    autoHealCount: 0,
-    lastIncident: null
-};
-
-async function loadUptimeData() {
-    // Try to load from server, fallback to defaults
-    try {
-        const response = await fetch('/api/uptime');
-        if (response.ok) {
-            const data = await response.json();
-            uptimeData = { ...uptimeData, ...data };
-        }
-    } catch (e) {
-        console.log('Using local uptime data');
-    }
-    
-    // Check each service
-    await checkAllServices();
-    renderUptimeDashboard();
-}
-
-async function checkAllServices() {
-    for (let service of uptimeData.services) {
-        if (service.checkType === 'system') {
-            // System check is done via /api/system endpoint
-            service.status = 'online'; // Assume online if we can reach this
-            service.lastCheck = new Date();
-            continue;
-        }
-        
-        try {
-            // For dashboard itself, we know it's online
-            if (service.id === 'dashboard') {
-                service.status = 'online';
-                service.lastCheck = new Date();
-                continue;
-            }
-            
-            // For external services, we'd do actual health checks
-            // For now, simulate based on stored status
-            if (service.status === 'unknown') {
-                service.status = Math.random() > 0.1 ? 'online' : 'offline';
-            }
-            service.lastCheck = new Date();
-        } catch (e) {
-            service.status = 'offline';
-            service.lastCheck = new Date();
-        }
-    }
-}
-
-function renderUptimeDashboard() {
-    const onlineCount = uptimeData.services.filter(s => s.status === 'online').length;
-    const totalCount = uptimeData.services.length;
-    const overallStatus = onlineCount === totalCount ? 'online' : 
-                         onlineCount === 0 ? 'offline' : 'degraded';
-    
-    // Update summary cards
-    const overallCard = document.querySelector('.uptime-card.overall');
-    const overallStatusEl = document.getElementById('overall-status');
-    const uptimePct = document.getElementById('uptime-percentage');
-    
-    if (overallStatusEl) {
-        overallStatusEl.innerHTML = `
-            <span class="status-dot ${overallStatus}"></span>
-            <span class="status-text">${
-                overallStatus === 'online' ? 'All Systems Operational' :
-                overallStatus === 'degraded' ? 'Partial Outage' : 'Major Outage'
-            }</span>
-        `;
-    }
-    
-    if (overallCard) {
-        overallCard.className = `uptime-card overall ${overallStatus}`;
-    }
-    
-    if (uptimePct) {
-        const avgUptime = uptimeData.services.reduce((a, s) => a + (s.uptime || 99), 0) / totalCount;
-        uptimePct.textContent = avgUptime.toFixed(1) + '%';
-        uptimePct.style.color = overallStatus === 'online' ? 'var(--accent-green)' :
-                               overallStatus === 'degraded' ? 'var(--accent-yellow)' : 'var(--accent-red)';
-    }
-    
-    const servicesOnlineEl = document.getElementById('services-online');
-    if (servicesOnlineEl) {
-        servicesOnlineEl.textContent = `${onlineCount}/${totalCount}`;
-    }
-    
-    const lastIncidentEl = document.getElementById('last-incident');
-    const incidentAgoEl = document.getElementById('incident-ago');
-    if (lastIncidentEl && uptimeData.lastIncident) {
-        lastIncidentEl.textContent = uptimeData.lastIncident.service;
-        incidentAgoEl.textContent = timeAgo(new Date(uptimeData.lastIncident.time));
-    } else if (lastIncidentEl) {
-        lastIncidentEl.textContent = 'None';
-        incidentAgoEl.textContent = 'All good!';
-    }
-    
-    const autoHealEl = document.getElementById('auto-heal-count');
-    if (autoHealEl) {
-        autoHealEl.textContent = uptimeData.autoHealCount || 0;
-    }
-    
-    // Render services grid
-    const servicesGrid = document.getElementById('services-grid');
-    if (servicesGrid) {
-        servicesGrid.innerHTML = uptimeData.services.map(service => `
-            <div class="service-card ${service.status}">
-                <span class="service-icon">${service.icon}</span>
-                <div class="service-info">
-                    <div class="service-name">${service.name}</div>
-                    <div class="service-url">${service.url || 'Local System'}</div>
-                </div>
-                <div class="service-status">
-                    <span class="service-state ${service.status}">${service.status.toUpperCase()}</span>
-                    <span class="service-uptime">${service.uptime}% uptime</span>
-                </div>
-                ${service.status === 'offline' ? `
-                    <div class="service-actions">
-                        <button class="service-btn restart" onclick="restartService('${service.id}')">🔄 Restart</button>
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
-    }
-    
-    // Render incidents
-    const incidentsList = document.getElementById('incidents-list');
-    if (incidentsList) {
-        if (uptimeData.incidents && uptimeData.incidents.length > 0) {
-            incidentsList.innerHTML = uptimeData.incidents.slice(0, 10).map(incident => `
-                <div class="incident-item ${incident.resolved ? 'resolved' : ''}">
-                    <span class="incident-icon">${incident.resolved ? '✅' : '🚨'}</span>
-                    <div class="incident-details">
-                        <div class="incident-title">${incident.service} ${incident.resolved ? 'Recovered' : 'Down'}</div>
-                        <div class="incident-meta">
-                            <span>${new Date(incident.time).toLocaleString('en-US', { timeZone: 'America/New_York' })}</span>
-                            <span>${incident.reason || 'Connection timeout'}</span>
-                        </div>
-                    </div>
-                    <div class="incident-duration">
-                        ${incident.duration || (incident.resolved ? timeAgo(new Date(incident.resolvedAt)) : 'Ongoing')}
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            incidentsList.innerHTML = `
-                <div class="no-incidents">
-                    <p style="font-size: 3rem; margin-bottom: 1rem;">🎉</p>
-                    <p>No incidents in the last 30 days!</p>
-                </div>
-            `;
-        }
-    }
-}
-
-function timeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + ' years ago';
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + ' months ago';
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + ' days ago';
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + ' hours ago';
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + ' minutes ago';
-    return Math.floor(seconds) + ' seconds ago';
-}
-
-async function restartService(serviceId) {
-    const service = uptimeData.services.find(s => s.id === serviceId);
-    if (!service) return;
-    
-    service.status = 'restarting';
-    renderUptimeDashboard();
-    addLog('warning', `Restarting service: ${service.name}`);
-    
-    // Simulate restart delay
-    setTimeout(() => {
-        service.status = 'online';
-        uptimeData.autoHealCount++;
-        
-        // Add recovery incident
-        uptimeData.incidents.unshift({
-            service: service.name,
-            time: new Date(Date.now() - 60000).toISOString(),
-            resolved: true,
-            resolvedAt: new Date().toISOString(),
-            duration: '1m',
-            reason: 'Auto-recovered after restart'
-        });
-        
-        renderUptimeDashboard();
-        addLog('success', `Service ${service.name} restarted successfully`);
-        
-        // Show notification
-        showNotification('🟢 Service Recovered', `${service.name} is back online!`);
-    }, 3000);
-    
-    // In real implementation, this would call the backend
-    try {
-        await fetch('/api/services/' + serviceId + '/restart', { method: 'POST' });
-    } catch (e) {
-        console.log('Restart request sent (fallback to simulation)');
-    }
-}
-
-function refreshUptime() {
-    const btn = document.querySelector('button[onclick="refreshUptime()"]');
-    if (btn) btn.textContent = '🔄 Checking...';
-    
-    loadUptimeData().then(() => {
-        if (btn) btn.textContent = '🔄 Refresh';
-        addLog('info', 'Uptime check completed');
-    }).catch(() => {
-        if (btn) btn.textContent = '🔄 Refresh';
-        addLog('error', 'Uptime check failed');
-    });
-}
-
-function showNotification(title, message) {
-    // Simple browser notification or dashboard notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, { body: message });
-    }
-    addLog('success', `${title}: ${message}`);
-}
+console.log('🚀 Cosmo Dashboard loaded - SQLite backend');
