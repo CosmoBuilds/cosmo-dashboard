@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cosmo Command Center</title>
-    <link rel="stylesheet" href="css/styles.css?v=3">
+    <link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
     <div class="dashboard">
@@ -55,6 +55,9 @@
                     </button>
                     <button class="nav-btn" data-view="logs">
                         <span>📝</span> Activity Log
+                    </button>
+                    <button class="nav-btn" data-view="uptime">
+                        <span>🟢</span> Uptime
                     </button>
                     <button class="nav-btn" data-view="tokens">
                         <span>📊</span> Usage
@@ -307,6 +310,83 @@
                     </div>
                 </section>
 
+                <!-- Uptime View -->
+                <section id="uptime-view" class="view">
+                    <div class="view-header">
+                        <h2>🟢 System Uptime Monitor</h2>
+                        <button class="btn-secondary" onclick="refreshUptime()">🔄 Refresh</button>
+                    </div>
+                    
+                    <!-- Uptime Overview -->
+                    <div class="uptime-summary">
+                        <div class="uptime-card overall">
+                            <h3>Overall Status</h3>
+                            <div class="uptime-status-indicator" id="overall-status">
+                                <span class="status-dot online"></span>
+                                <span class="status-text">All Systems Operational</span>
+                            </div>
+                            <div class="uptime-percentage" id="uptime-percentage">99.9%</div>
+                            <span class="uptime-label">Last 30 Days</span>
+                        </div>
+                        
+                        <div class="uptime-card">
+                            <h3>Services Online</h3>
+                            <div class="uptime-value" id="services-online">0/0</div>
+                            <span class="uptime-label">Active Services</span>
+                        </div>
+                        
+                        <div class="uptime-card">
+                            <h3>Last Incident</h3>
+                            <div class="uptime-value" id="last-incident">None</div>
+                            <span class="uptime-label" id="incident-ago">All good!</span>
+                        </div>
+                        
+                        <div class="uptime-card">
+                            <h3>Auto-Heals</h3>
+                            <div class="uptime-value" id="auto-heal-count">0</div>
+                            <span class="uptime-label">This Week</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Services Grid -->
+                    <div class="uptime-services">
+                        <h3>📡 Monitored Services</h3>
+                        <div class="services-grid" id="services-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Incident Log -->
+                    <div class="uptime-incidents">
+                        <h3>🚨 Recent Incidents</h3>
+                        <div class="incidents-list" id="incidents-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Auto-Heal Settings -->
+                    <div class="uptime-settings">
+                        <h3>⚡ Auto-Heal Configuration</h3>
+                        <div class="heal-settings">
+                            <label class="heal-toggle">
+                                <input type="checkbox" id="auto-heal-enabled" checked>
+                                <span class="toggle-slider"></span>
+                                <span>Enable Auto-Restart</span>
+                            </label>
+                            <label class="heal-toggle">
+                                <input type="checkbox" id="notify-on-heal" checked>
+                                <span class="toggle-slider"></span>
+                                <span>Discord Notifications</span>
+                            </label>
+                            <label class="heal-toggle">
+                                <input type="checkbox" id="notify-on-down">
+                                <span class="toggle-slider"></span>
+                                <span>Alert on Failure</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Settings View -->
                 <section id="settings-view" class="view">
                     <h2>⚙️ Settings & API Integrations</h2>
@@ -425,6 +505,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=3"></script>
+    <script src="js/app.js?v=4"></script>
 </body>
 </html>
