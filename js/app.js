@@ -60,10 +60,12 @@ async function loadData() {
         state.projects = data.projects || [];
         state.tasks = data.tasks || [];
         state.logs = data.logs || [];
+        dataLoaded = true;  // Mark data as loaded
         renderAll();
     } catch (e) {
         console.log('Loading default data...');
         loadDefaultData();
+        dataLoaded = true;  // Even default data counts as loaded
     }
 }
 
@@ -465,7 +467,15 @@ function exportLogs() {
 }
 
 // Data Persistence
+let dataLoaded = false;
+
 async function saveData() {
+    // Don't save until initial data is loaded
+    if (!dataLoaded) {
+        console.log('Data not loaded yet, skipping save');
+        return;
+    }
+    
     try {
         await fetch('/api/data', {
             method: 'POST',
