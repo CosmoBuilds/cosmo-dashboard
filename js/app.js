@@ -594,8 +594,21 @@ function submitIdea(e) {
     
     allIdeas.unshift(idea);
     renderIdeas(allIdeas);
+    saveIdeas();
     closeModal();
     addLog('success', `New idea created: "${idea.title}"`);
+}
+
+async function saveIdeas() {
+    try {
+        await fetch('/api/ideas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ideas: allIdeas })
+        });
+    } catch (e) {
+        console.log('Could not save ideas to server:', e);
+    }
 }
 
 function updateIdeaStatus(id, status) {
@@ -603,6 +616,7 @@ function updateIdeaStatus(id, status) {
     if (idea) {
         idea.status = status;
         renderIdeas(allIdeas);
+        saveIdeas();
         addLog('info', `Idea "${idea.title}" marked as ${status}`);
     }
 }
@@ -615,6 +629,7 @@ async function approveIdea(id) {
     idea.status = 'approved';
     idea.approvedAt = new Date().toISOString();
     renderIdeas(allIdeas);
+    saveIdeas();
     addLog('success', `Idea "${idea.title}" approved by Bowz`);
     
     // Send approval notification to Discord

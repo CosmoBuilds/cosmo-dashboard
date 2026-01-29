@@ -180,6 +180,15 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return stats
     
     def do_POST(self):
+        # Handle CORS preflight
+        if self.headers.get('Origin'):
+            self.send_response(200)
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.end_headers()
+            return
+            
         # Handle Discord notification endpoint
         if self.path == '/api/notify-discord':
             content_length = int(self.headers.get('Content-Length', 0))
@@ -198,6 +207,48 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"status": "sent"}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
+        # Handle saving ideas
+        if self.path == '/api/ideas':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                ideas_data = json.loads(post_data)
+                with open('data/ideas.json', 'w') as f:
+                    json.dump(ideas_data, f, indent=2)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "saved"}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
+        # Handle saving dashboard data (tasks, projects, logs)
+        if self.path == '/api/data':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                data = json.loads(post_data)
+                with open('data/dashboard-data.json', 'w') as f:
+                    json.dump(data, f, indent=2)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "saved"}).encode())
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-Type', 'application/json')
@@ -230,13 +281,24 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 Reply with "go" to proceed or suggest changes!"""
         
-        # Read token
+        # Read token from clawdbot config
+        token = None
         try:
-            with open('/home/madadmin/.clawdbot/discord_token.txt') as f:
-                token = f.read().strip()
+            # Try to read from clawdbot config
+            with open('/home/madadmin/.clawdbot/clawdbot.json') as f:
+                config = json.load(f)
+                token = config.get('channels', {}).get('discord', {}).get('token')
         except Exception as e:
-            print(f"Failed to read Discord token: {e}")
-            return
+            print(f"Could not read clawdbot config: {e}")
+        
+        # Fallback to token file
+        if not token:
+            try:
+                with open('/home/madadmin/.clawdbot/discord_token.txt') as f:
+                    token = f.read().strip()
+            except Exception as e:
+                print(f"Failed to read Discord token: {e}")
+                return
         
         # Send message directly
         try:
