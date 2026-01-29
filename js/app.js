@@ -162,10 +162,13 @@ function renderProjectsPreview() {
 }
 
 function renderProjectsBoard() {
-    const columns = ['planning', 'in-progress', 'review', 'complete'];
+    const columns = ['pending-review', 'planning', 'in-progress', 'review', 'complete'];
     
     columns.forEach(status => {
         const container = document.getElementById(`col-${status}`);
+        // Handle the case where pending-review might not have a column yet
+        if (!container) return;
+        
         const projects = state.projects.filter(p => p.status === status);
         
         container.innerHTML = projects.map(p => `
@@ -173,7 +176,7 @@ function renderProjectsBoard() {
                 <h4>${p.name}</h4>
                 <p>${p.description}</p>
             </div>
-        `).join('');
+        `).join('') || '<p style="color: var(--text-secondary); font-size: 0.8rem;">No projects</p>';
     });
 }
 
