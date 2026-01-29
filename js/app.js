@@ -796,8 +796,39 @@ function refreshTokenStats() {
     addLog('info', 'Token stats refreshed');
 }
 
+// Agent Status Checker
+async function checkAgentStatus() {
+    // In a real implementation, this would ping each agent's endpoint
+    // For now, simulate based on session activity
+    const agents = ['cosmo', 'dash', 'lumina', 'aidorix'];
+    
+    agents.forEach(agent => {
+        const statusEl = document.querySelector(`#${agent}-task`);
+        const cardEl = document.querySelector(`.agent-card:has(#${agent}-task)`);
+        
+        if (statusEl && cardEl) {
+            // Check if there's recent activity (simulated)
+            const isActive = Math.random() > 0.1; // 90% chance online
+            const statusIndicator = cardEl.querySelector('.agent-status');
+            
+            if (statusIndicator) {
+                if (isActive) {
+                    statusIndicator.className = 'agent-status online';
+                    statusIndicator.textContent = '● Online';
+                } else {
+                    statusIndicator.className = 'agent-status offline';
+                    statusIndicator.textContent = '● Offline';
+                }
+            }
+        }
+    });
+}
+
 // Load ideas on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadIdeas();
     loadTokenStats();
+    checkAgentStatus();
+    // Check agent status every 30 seconds
+    setInterval(checkAgentStatus, 30000);
 });

@@ -404,6 +404,10 @@ body {
     color: var(--accent-green);
 }
 
+.agent-status.offline {
+    color: var(--accent-red);
+}
+
 .agent-stats {
     margin-top: 1rem;
     display: flex;
