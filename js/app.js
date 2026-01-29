@@ -770,6 +770,21 @@ function useMockTokenData() {
     renderTokenStats();
 }
 
+function refreshTokenStats() {
+    // Show loading state
+    const btn = document.querySelector('button[onclick="refreshTokenStats()"]');
+    if (btn) btn.textContent = '🔄 Refreshing...';
+    
+    // Re-fetch from server
+    loadTokenStats().then(() => {
+        if (btn) btn.textContent = '🔄 Refresh';
+        addLog('info', 'Token stats refreshed');
+    }).catch(() => {
+        if (btn) btn.textContent = '🔄 Refresh';
+        addLog('error', 'Failed to refresh token stats');
+    });
+}
+
 function renderTokenStats() {
     // Update summary cards
     document.getElementById('today-cost').textContent = '$' + tokenStats.todayCost.toFixed(4);
