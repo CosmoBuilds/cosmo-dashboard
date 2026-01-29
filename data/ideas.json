@@ -65,7 +65,7 @@
       "title": "Self-Healing System Monitor",
       "description": "If a service goes down (like the dashboard server), auto-restart it and notify. Keep everything running 24/7.",
       "priority": "high",
-      "status": "in-progress",
+      "status": "open",
       "assignee": "Cosmo-v2",
       "created": "2026-01-29T14:37:00-05:00",
       "createdBy": "Cosmo-v2"

@@ -525,7 +525,7 @@ function renderIdeas(ideas) {
                 <span>✍️ ${idea.createdBy}</span>
             </div>
             <div class="idea-actions">
-                ${idea.status === 'open' ? `<button class="btn-small btn-approve" onclick="approveIdea(${idea.id})">✅ Approve</button>` : ''}
+                ${idea.status !== 'approved' && idea.status !== 'done' ? `<button class="btn-small btn-approve" onclick="approveIdea(${idea.id})">✅ Approve</button>` : ''}
                 <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'in-progress')">Start</button>
                 <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'done')">Complete</button>
             </div>
