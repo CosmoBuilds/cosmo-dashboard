@@ -632,21 +632,27 @@ async function approveIdea(id) {
     saveIdeas();
     addLog('success', `Idea "${idea.title}" approved by Bowz`);
     
-    // Send approval notification to Discord
+    // Generate plan and notify
     const planOfAttack = generatePlanOfAttack(idea);
     
+    // Write notification to file for Cosmo to pick up
+    const notification = {
+        type: 'idea_approved',
+        timestamp: new Date().toISOString(),
+        idea: idea,
+        plan: planOfAttack,
+        channel: '1466517317403021362'
+    };
+    
     try {
-        await fetch('/api/notify-discord', {
+        // Save notification to pending file
+        await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                channel: '1466517317403021362',
-                idea: idea,
-                plan: planOfAttack
-            })
+            body: JSON.stringify(notification)
         });
     } catch (e) {
-        console.log('Discord notification failed:', e);
+        console.log('Notification queued for Cosmo:', e);
     }
 }
 

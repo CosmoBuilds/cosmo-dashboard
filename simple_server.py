@@ -256,6 +256,44 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": str(e)}).encode())
             return
         
+        # Handle notification queue for Cosmo
+        if self.path == '/api/notify':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                notification = json.loads(post_data)
+                # Write to notifications file for Cosmo to pick up
+                notifications_file = '/home/madadmin/clawd/data/notifications.json'
+                
+                # Read existing notifications
+                notifications = []
+                if os.path.exists(notifications_file):
+                    try:
+                        with open(notifications_file) as f:
+                            notifications = json.load(f)
+                    except:
+                        notifications = []
+                
+                # Add new notification
+                notifications.append(notification)
+                
+                # Save back
+                os.makedirs(os.path.dirname(notifications_file), exist_ok=True)
+                with open(notifications_file, 'w') as f:
+                    json.dump(notifications, f, indent=2)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "queued"}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
         self.send_response(404)
         self.end_headers()
     
