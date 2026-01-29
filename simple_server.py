@@ -305,6 +305,8 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             try:
                 notification = json.loads(post_data)
+                print(f"Received notification: {notification.get('type', 'unknown')}")
+                
                 # Write to notifications file for Cosmo to pick up
                 notifications_file = '/home/madadmin/clawd/data/notifications.json'
                 
@@ -314,16 +316,24 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     try:
                         with open(notifications_file) as f:
                             notifications = json.load(f)
-                    except:
+                        print(f"Read {len(notifications)} existing notifications")
+                    except Exception as read_err:
+                        print(f"Error reading notifications: {read_err}")
                         notifications = []
                 
                 # Add new notification
                 notifications.append(notification)
+                print(f"Added notification, total now: {len(notifications)}")
                 
                 # Save back
-                os.makedirs(os.path.dirname(notifications_file), exist_ok=True)
-                with open(notifications_file, 'w') as f:
-                    json.dump(notifications, f, indent=2)
+                try:
+                    os.makedirs(os.path.dirname(notifications_file), exist_ok=True)
+                    with open(notifications_file, 'w') as f:
+                        json.dump(notifications, f, indent=2)
+                    print(f"Saved notifications to {notifications_file}")
+                except Exception as write_err:
+                    print(f"Error writing notifications: {write_err}")
+                    raise
                 
                 # Send response immediately
                 self.send_response(200)
@@ -334,6 +344,9 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 except:
                     pass  # Client may have disconnected
             except Exception as e:
+                print(f"Error in notify handler: {e}")
+                import traceback
+                traceback.print_exc()
                 self.send_response(500)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
