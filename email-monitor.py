@@ -80,9 +80,9 @@ def mark_read(message_id):
 def process_email(msg):
     """Process a new email"""
     msg_id = msg.get('message_id')
-    from_addr = msg.get('from_address')
+    from_addr = msg.get('from', '')
     subject = msg.get('subject', '(no subject)')
-    body = msg.get('text', '')
+    body = msg.get('preview', '')  # API gives preview, not full text
     
     print(f"\n📨 New email from {from_addr}")
     print(f"   Subject: {subject}")
@@ -140,19 +140,20 @@ def check_emails():
     state = load_state()
     
     messages = get_messages(limit=10)
-    if not messages or 'data' not in messages:
+    if not messages or 'messages' not in messages:
         return
     
     new_count = 0
-    for msg in messages['data']:
+    for msg in messages['messages']:
         msg_id = msg.get('message_id')
         
         # Skip already processed
         if msg_id in state['processed_ids']:
             continue
         
-        # Skip our own sent emails
-        if msg.get('folder') == 'sent':
+        # Skip our own sent emails (check labels for 'sent')
+        labels = msg.get('labels', [])
+        if 'sent' in labels:
             state['processed_ids'].append(msg_id)
             continue
         
