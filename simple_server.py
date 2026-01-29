@@ -209,8 +209,9 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
     
     def send_discord_notification(self, idea, plan, channel):
-        """Send notification to Discord using subprocess to call Clawdbot"""
-        import subprocess
+        """Send notification to Discord"""
+        import urllib.request
+        import urllib.error
         
         title = idea.get('title', 'Unknown')
         description = idea.get('description', '')
@@ -229,42 +230,38 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 Reply with "go" to proceed or suggest changes!"""
         
-        # Use subprocess to send Discord message
+        # Read token
         try:
-            subprocess.run([
-                'python3', '-c',
-                f"""
-import json
-import urllib.request
-
-webhook_data = {{
-    "content": {repr(message)}
-}}
-
-req = urllib.request.Request(
-    'https://discord.com/api/v10/channels/{channel}/messages',
-    data=json.dumps(webhook_data).encode(),
-    headers={{
-        'Content-Type': 'application/json',
-        'Authorization': 'Bot ' + open('/home/madadmin/.clawdbot/discord_token.txt').read().strip()
-    }},
-    method='POST'
-)
-
-try:
-    urllib.request.urlopen(req)
-    print('Discord notification sent!')
-except Exception as e:
-    print(f'Error: {{e}}')
-"""
-            ], timeout=10)
+            with open('/home/madadmin/.clawdbot/discord_token.txt') as f:
+                token = f.read().strip()
+        except Exception as e:
+            print(f"Failed to read Discord token: {e}")
+            return
+        
+        # Send message directly
+        try:
+            webhook_data = {"content": message}
+            req = urllib.request.Request(
+                f'https://discord.com/api/v10/channels/{channel}/messages',
+                data=json.dumps(webhook_data).encode(),
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bot {token}'
+                },
+                method='POST'
+            )
+            urllib.request.urlopen(req)
+            print(f'Discord notification sent to channel {channel}')
+        except urllib.error.HTTPError as e:
+            print(f"Discord API error: {e.code} - {e.read().decode()}")
         except Exception as e:
             print(f"Failed to send Discord notification: {e}")
             # Fallback: write to a file for pickup
             with open('/tmp/discord_notification.json', 'w') as f:
                 json.dump({
                     'channel': channel,
-                    'message': message
+                    'message': message,
+                    'error': str(e)
                 }, f)
 
 
