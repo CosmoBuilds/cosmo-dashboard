@@ -80,6 +80,29 @@
       "assignee": "Dash",
       "created": "2026-01-29T14:40:00-05:00",
       "createdBy": "Cosmo-v2"
+    },
+    {
+      "id": 9,
+      "title": "YouTube Automation Business",
+      "description": "Build faceless YouTube channels using AI for scripts, editing, and thumbnails. Create a catalog of videos that generate passive income. 6-month initial push, then strategic laziness pays off.",
+      "priority": "medium",
+      "status": "pending",
+      "assignee": "team",
+      "created": "2026-01-29T17:24:00-05:00",
+      "createdBy": "Bowz",
+      "notes": "Future plans - not started. Proven business model, scalable, passive income potential."
+    },
+    {
+      "id": 10,
+      "title": "Screenshot/Image Acknowledgment",
+      "description": "When Bowz uploads screenshots or images to Discord, Cosmo should acknowledge receipt and confirm the visual information has been processed and taken into account.",
+      "priority": "low",
+      "status": "done",
+      "assignee": "Cosmo",
+      "created": "2026-01-29T17:46:00-05:00",
+      "createdBy": "Bowz",
+      "completedAt": "2026-01-29T17:47:00-05:00",
+      "notes": "Behavior updated - Cosmo will now confirm when screenshots/images are received and processed."
     }
   ]
 }

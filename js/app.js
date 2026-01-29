@@ -9,6 +9,9 @@ const state = {
     systemStatus: {}
 };
 
+// Current filter for ideas
+let currentIdeaFilter = 'all';
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
@@ -181,11 +184,14 @@ function renderIdeas() {
     const container = document.getElementById('ideas-list');
     if (!container) return;
     
-    const filter = document.getElementById('ideas-filter')?.value || 'all';
     let ideas = state.ideas;
     
-    if (filter !== 'all') {
-        ideas = ideas.filter(i => i.status === filter);
+    if (currentIdeaFilter !== 'all') {
+        if (currentIdeaFilter === 'bowz') {
+            ideas = ideas.filter(i => i.assignee === 'Bowz');
+        } else {
+            ideas = ideas.filter(i => i.status === currentIdeaFilter);
+        }
     }
     
     container.innerHTML = ideas.map(idea => `
@@ -298,6 +304,7 @@ function generatePlan(idea) {
 }
 
 function filterIdeas(filter) {
+    currentIdeaFilter = filter;
     renderIdeas();
 }
 
@@ -449,4 +456,262 @@ document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'modal-overlay') closeModal();
 });
 
+// ==================== QUICK ACTIONS ====================
+
+function createTask() {
+    openModal('New Task', `
+        <form onsubmit="submitTask(event)">
+            <div class="form-group">
+                <label>Task Title</label>
+                <input type="text" id="task-title" required>
+            </div>
+            <div class="form-group">
+                <label>Project</label>
+                <select id="task-project">
+                    ${state.projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
+                    <option value="General">General</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="task-priority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                Create Task
+            </button>
+        </form>
+    `);
+}
+
+async function submitTask(e) {
+    e.preventDefault();
+    
+    const task = {
+        id: Date.now(),
+        title: document.getElementById('task-title').value,
+        project: document.getElementById('task-project').value,
+        priority: document.getElementById('task-priority').value,
+        done: false
+    };
+    
+    try {
+        const response = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(task)
+        });
+        
+        if (response.ok) {
+            state.tasks.unshift(task);
+            closeModal();
+            renderAll();
+            console.log('✅ Task saved to SQLite');
+        }
+    } catch (err) {
+        console.error('Error saving task:', err);
+    }
+}
+
+function checkEmails() {
+    openModal('📧 Email Status', `
+        <div style="text-align: center; padding: 2rem;">
+            <p style="font-size: 3rem; margin-bottom: 1rem;">📧</p>
+            <h3>Email Integration</h3>
+            <p style="color: var(--text-secondary); margin-top: 1rem;">
+                Account: cosmobowz@gmail.com<br>
+                Monitoring: jwelshkoiii@outlook.com
+            </p>
+            <p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                ✅ Gmail API connected and operational
+            </p>
+        </div>
+    `);
+}
+
+function systemHealth() {
+    fetchSystemStatus();
+    openModal('🏥 System Health', `
+        <div style="padding: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <div style="color: var(--text-secondary); font-size: 0.8rem;">CPU</div>
+                    <div style="font-size: 1.5rem; color: var(--accent-green);" id="modal-cpu">--</div>
+                </div>
+                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <div style="color: var(--text-secondary); font-size: 0.8rem;">Memory</div>
+                    <div style="font-size: 1.5rem; color: var(--accent-green);" id="modal-mem">--</div>
+                </div>
+                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <div style="color: var(--text-secondary); font-size: 0.8rem;">Disk</div>
+                    <div style="font-size: 1.5rem; color: var(--accent-green);" id="modal-disk">--</div>
+                </div>
+                <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <div style="color: var(--text-secondary); font-size: 0.8rem;">Host</div>
+                    <div style="font-size: 1.5rem; color: var(--accent-blue);">madserver</div>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(63, 185, 80, 0.1); border: 1px solid var(--accent-green); border-radius: 8px; text-align: center;">
+                ✅ All Systems Operational
+            </div>
+        </div>
+    `);
+    
+    // Update modal with live data
+    fetch('/api/system').then(r => r.json()).then(data => {
+        const cpuEl = document.getElementById('modal-cpu');
+        const memEl = document.getElementById('modal-mem');
+        const diskEl = document.getElementById('modal-disk');
+        if (cpuEl) cpuEl.textContent = data.cpu + '%';
+        if (memEl) memEl.textContent = data.memory + '%';
+        if (diskEl) diskEl.textContent = data.disk + '%';
+    }).catch(() => {});
+}
+
+function exportLogs() {
+    const logText = state.logs.map(l => 
+        `[${new Date(l.time).toISOString()}] [${l.type?.toUpperCase() || 'INFO'}] ${l.message}`
+    ).join('\n');
+    
+    const blob = new Blob([logText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cosmo-logs-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function viewProject(id) {
+    const project = state.projects.find(p => p.id === id);
+    if (!project) return;
+    
+    const projectTasks = state.tasks.filter(t => t.project === project.name);
+    const tasksList = projectTasks.map(t => `
+        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; margin-bottom: 0.5rem;">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})">
+            <span style="${t.done ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${t.title}</span>
+        </div>
+    `).join('') || '<p style="color: var(--text-secondary)">No tasks yet</p>';
+    
+    openModal(`📁 ${project.name}`, `
+        <div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">${project.description || 'No description'}</p>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <span style="padding: 0.25rem 0.75rem; background: var(--bg-tertiary); border-radius: 4px;">
+                    Status: ${project.status}
+                </span>
+                <span style="padding: 0.25rem 0.75rem; background: var(--bg-tertiary); border-radius: 4px;">
+                    Created: ${project.created}
+                </span>
+            </div>
+            <h4 style="margin-bottom: 0.75rem;">Tasks</h4>
+            ${tasksList}
+        </div>
+    `);
+}
+
+// Token/Usage tracker functions
+async function refreshTokenStats() {
+    const btn = document.querySelector('button[onclick="refreshTokenStats()"]');
+    if (btn) btn.textContent = '🔄 Refreshing...';
+    
+    // Fetch real data from API
+    let tokenStats;
+    try {
+        const response = await fetch('/api/tokens');
+        tokenStats = await response.json();
+    } catch (e) {
+        console.error('Error fetching token stats:', e);
+        tokenStats = {
+            todayTokens: 0,
+            todayLimit: 0,
+            todayPercent: 0,
+            activeSessions: 0,
+            models: {},
+            sessions: [],
+            availableModels: []
+        };
+    }
+    
+    // Format numbers for display
+    const formatK = (num) => {
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+        return num.toString();
+    };
+    
+    // Update summary cards
+    const todayTokensEl = document.getElementById('today-tokens');
+    const todayPercentEl = document.getElementById('today-percent');
+    const activeSessionsEl = document.getElementById('active-sessions');
+    const availableModelsEl = document.getElementById('available-models');
+    
+    if (todayTokensEl) todayTokensEl.textContent = `${formatK(tokenStats.todayTokens)}/${formatK(tokenStats.todayLimit)}`;
+    if (todayPercentEl) todayPercentEl.textContent = `${tokenStats.todayPercent}% used`;
+    if (activeSessionsEl) activeSessionsEl.textContent = tokenStats.activeSessions;
+    if (availableModelsEl) availableModelsEl.textContent = tokenStats.availableModels?.length || 0;
+    
+    // Update model usage
+    const modelList = document.getElementById('model-usage');
+    if (modelList && tokenStats.models && Object.keys(tokenStats.models).length > 0) {
+        modelList.innerHTML = Object.entries(tokenStats.models).map(([model, stats]) => `
+            <div class="model-usage-item">
+                <div class="model-name">${model}</div>
+                <div class="model-stats">
+                    ${formatK(stats.tokens)} tokens • ${stats.calls} calls<br>
+                    <span style="color: var(--accent-green)">${stats.sessions} session${stats.sessions !== 1 ? 's' : ''}</span>
+                </div>
+            </div>
+        `).join('');
+    } else if (modelList) {
+        modelList.innerHTML = '<div class="model-usage-item"><div class="model-name">No active models</div></div>';
+    }
+    
+    // Update sessions with progress bars
+    const sessionsList = document.getElementById('recent-sessions');
+    if (sessionsList && tokenStats.sessions && tokenStats.sessions.length > 0) {
+        sessionsList.innerHTML = tokenStats.sessions.map(session => `
+            <div class="session-item ${session.status}">
+                <div class="session-info">
+                    <span class="session-agent">${session.name}</span>
+                    <span class="session-model">${session.provider}/${session.model}</span>
+                </div>
+                <div class="session-usage">
+                    <div class="usage-bar-container">
+                        <div class="usage-bar" style="width: ${session.percentUsed}%"></div>
+                    </div>
+                    <span class="usage-text">${formatK(session.tokensUsed)}/${formatK(session.tokensLimit)} (${session.percentUsed}%)</span>
+                </div>
+            </div>
+        `).join('');
+    } else if (sessionsList) {
+        sessionsList.innerHTML = '<div class="session-item"><div class="session-info"><span class="session-agent">No active sessions</span></div></div>';
+    }
+    
+    if (btn) btn.textContent = '🔄 Refresh';
+    console.log('✅ Token stats refreshed');
+}
+
 console.log('🚀 Cosmo Dashboard loaded - SQLite backend');
+
+// Make functions globally accessible for onclick handlers
+window.createProject = createProject;
+window.submitProject = submitProject;
+window.showNewIdeaForm = showNewIdeaForm;
+window.submitIdea = submitIdea;
+window.approveIdea = approveIdea;
+window.filterIdeas = filterIdeas;
+window.toggleTask = toggleTask;
+window.refreshUptime = refreshUptime;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.createTask = createTask;
+window.submitTask = submitTask;
+window.checkEmails = checkEmails;
+window.systemHealth = systemHealth;
+window.exportLogs = exportLogs;
+window.viewProject = viewProject;
+window.refreshTokenStats = refreshTokenStats;

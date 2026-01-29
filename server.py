@@ -404,6 +404,104 @@ def get_uptime():
         "lastIncident": None
     })
 
+@app.route('/api/tokens', methods=['GET'])
+def get_tokens():
+    """Get token usage data from clawdbot sessions with real-time limits"""
+    try:
+        sessions_file = '/home/madadmin/.clawdbot/agents/main/sessions/sessions.json'
+        
+        if os.path.exists(sessions_file):
+            with open(sessions_file, 'r') as f:
+                sessions = json.load(f)
+            
+            total_tokens = 0
+            total_limit = 0
+            session_list = []
+            model_stats = {}
+            
+            for session_key, session_info in sessions.items():
+                # Extract session details
+                model = session_info.get('model', 'unknown')
+                provider = session_info.get('modelProvider', 'unknown')
+                input_tokens = session_info.get('inputTokens', 0)
+                output_tokens = session_info.get('outputTokens', 0)
+                context_limit = session_info.get('contextTokens', 262144)  # Default 262k
+                
+                session_total = input_tokens + output_tokens
+                total_tokens += session_total
+                total_limit += context_limit
+                
+                # Format session key for display
+                session_name = session_key.replace('agent:main:', '').replace('discord:', 'Discord ').replace('channel:', '#')
+                
+                session_list.append({
+                    'name': session_name,
+                    'agent': 'Cosmo',
+                    'model': model,
+                    'provider': provider,
+                    'status': 'active',
+                    'tokensUsed': session_total,
+                    'tokensLimit': context_limit,
+                    'percentUsed': round((session_total / context_limit) * 100, 1),
+                    'inputTokens': input_tokens,
+                    'outputTokens': output_tokens
+                })
+                
+                # Aggregate by model
+                model_key = f"{provider}/{model}"
+                if model_key not in model_stats:
+                    model_stats[model_key] = {
+                        'tokens': 0,
+                        'calls': 0,
+                        'sessions': 0
+                    }
+                model_stats[model_key]['tokens'] += session_total
+                model_stats[model_key]['calls'] += 1
+                model_stats[model_key]['sessions'] += 1
+            
+            return jsonify({
+                'todayTokens': total_tokens,
+                'todayLimit': total_limit,
+                'todayPercent': round((total_tokens / total_limit) * 100, 1) if total_limit > 0 else 0,
+                'activeSessions': len(sessions),
+                'models': model_stats,
+                'sessions': session_list,
+                'availableModels': [
+                    {'name': 'kimi-for-coding', 'provider': 'kimi-code', 'limit': 262144, 'costPer1K': 0.0, 'alias': 'Kimi Code'},
+                    {'name': 'kimi-k2-0905-preview', 'provider': 'moonshot', 'limit': 262144, 'costPer1K': 0.0, 'alias': 'Kimi K2'},
+                    {'name': 'kimi-k2.5-latest', 'provider': 'moonshot', 'limit': 256000, 'costPer1K': 0.0, 'alias': 'Kimi K2.5'}
+                ],
+                'currentModel': {
+                    'name': 'kimi-k2.5-latest',
+                    'provider': 'moonshot',
+                    'alias': 'Kimi K2.5',
+                    'contextWindow': 256000,
+                    'status': 'active'
+                }
+            })
+        
+        # Fallback
+        return jsonify({
+            'todayTokens': 0,
+            'todayLimit': 786432,
+            'todayPercent': 0,
+            'activeSessions': 0,
+            'models': {},
+            'sessions': [],
+            'availableModels': []
+        })
+    except Exception as e:
+        print(f"Error getting token stats: {e}")
+        return jsonify({
+            'todayTokens': 0,
+            'todayLimit': 0,
+            'todayPercent': 0,
+            'activeSessions': 0,
+            'models': {},
+            'sessions': [],
+            'availableModels': []
+        })
+
 if __name__ == '__main__':
     print("🚀 Starting Cosmo Dashboard Server...")
     print(f"📊 Database: {DB_PATH}")

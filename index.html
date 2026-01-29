@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cosmo Command Center</title>
-    <link rel="stylesheet" href="css/styles.css?v=13">
+    <link rel="stylesheet" href="css/styles.css?v=16">
 </head>
 <body>
     <div class="dashboard">
@@ -279,16 +279,26 @@
                         <button class="btn-secondary" onclick="refreshTokenStats()">🔄 Refresh</button>
                     </div>
                     
+                    <!-- Current Model Banner -->
+                    <div class="model-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h3 style="margin: 0 0 5px 0; font-size: 1.2em;">🧠 Current Model</h3>
+                                <p style="margin: 0; font-size: 1.8em; font-weight: bold;">Kimi K2.5</p>
+                                <p style="margin: 5px 0 0 0; opacity: 0.9;">moonshot/kimi-k2.5-latest • 256k context</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 2.5em;">⚡</div>
+                                <p style="margin: 5px 0 0 0; font-size: 0.9em;">Active & Running</p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="tokens-summary">
                         <div class="token-card">
-                            <h3>💰 Today's Cost</h3>
-                            <div class="token-value" id="today-cost">$0.00</div>
-                            <span class="token-label">USD</span>
-                        </div>
-                        <div class="token-card">
                             <h3>📝 Today's Tokens</h3>
-                            <div class="token-value" id="today-tokens">0</div>
-                            <span class="token-label">Input + Output</span>
+                            <div class="token-value" id="today-tokens">0/0</div>
+                            <span class="token-label" id="today-percent">0% used</span>
                         </div>
                         <div class="token-card">
                             <h3>🤖 Active Sessions</h3>
@@ -296,9 +306,14 @@
                             <span class="token-label">Current</span>
                         </div>
                         <div class="token-card">
-                            <h3>📅 This Month</h3>
-                            <div class="token-value" id="month-cost">$0.00</div>
-                            <span class="token-label">Estimated</span>
+                            <h3>🧠 Models Available</h3>
+                            <div class="token-value" id="available-models">0</div>
+                            <span class="token-label">AI Providers</span>
+                        </div>
+                        <div class="token-card">
+                            <h3>📊 Context Limit</h3>
+                            <div class="token-value" id="context-limit">256k</div>
+                            <span class="token-label">K2.5 Limit</span>
                         </div>
                     </div>
                     
@@ -311,7 +326,7 @@
                         </div>
                         
                         <div class="token-section">
-                            <h3>📋 Recent Sessions</h3>
+                            <h3>📋 Active Sessions (with limits)</h3>
                             <div class="sessions-list" id="recent-sessions">
                                 <!-- Populated by JS -->
                             </div>
@@ -514,6 +529,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=13"></script>
+    <script src="js/app.js?v=16"></script>
 </body>
 </html>
