@@ -820,6 +820,17 @@ body {
     background: var(--border-color);
 }
 
+.btn-approve {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.btn-approve:hover {
+    background: var(--accent-green);
+    color: var(--bg-dark);
+}
+
 .no-ideas {
     text-align: center;
     padding: 3rem;

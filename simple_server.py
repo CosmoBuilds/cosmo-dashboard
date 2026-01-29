@@ -98,6 +98,94 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         
         # Default: serve static files
         super().do_GET()
+    
+    def do_POST(self):
+        # Handle Discord notification endpoint
+        if self.path == '/api/notify-discord':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                data = json.loads(post_data)
+                idea = data.get('idea', {})
+                plan = data.get('plan', '')
+                channel = data.get('channel', '')
+                
+                # Send notification via Discord webhook or bot
+                self.send_discord_notification(idea, plan, channel)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "sent"}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
+        self.send_response(404)
+        self.end_headers()
+    
+    def send_discord_notification(self, idea, plan, channel):
+        """Send notification to Discord using subprocess to call Clawdbot"""
+        import subprocess
+        
+        title = idea.get('title', 'Unknown')
+        description = idea.get('description', '')
+        priority = idea.get('priority', 'medium')
+        assignee = idea.get('assignee', 'team')
+        
+        # Build the message
+        message = f"""💡 **IDEA APPROVED** <@370334885652463626>
+
+**{title}**
+{description}
+
+**Priority:** {priority.upper()} | **Assigned to:** {assignee}
+
+{plan}
+
+Reply with "go" to proceed or suggest changes!"""
+        
+        # Use subprocess to send Discord message
+        try:
+            subprocess.run([
+                'python3', '-c',
+                f"""
+import json
+import urllib.request
+
+webhook_data = {{
+    "content": {repr(message)}
+}}
+
+req = urllib.request.Request(
+    'https://discord.com/api/v10/channels/{channel}/messages',
+    data=json.dumps(webhook_data).encode(),
+    headers={{
+        'Content-Type': 'application/json',
+        'Authorization': 'Bot ' + open('/home/madadmin/.clawdbot/discord_token.txt').read().strip()
+    }},
+    method='POST'
+)
+
+try:
+    urllib.request.urlopen(req)
+    print('Discord notification sent!')
+except Exception as e:
+    print(f'Error: {{e}}')
+"""
+            ], timeout=10)
+        except Exception as e:
+            print(f"Failed to send Discord notification: {e}")
+            # Fallback: write to a file for pickup
+            with open('/tmp/discord_notification.json', 'w') as f:
+                json.dump({
+                    'channel': channel,
+                    'message': message
+                }, f)
 
 
 if __name__ == "__main__":

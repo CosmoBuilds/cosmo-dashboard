@@ -525,6 +525,7 @@ function renderIdeas(ideas) {
                 <span>✍️ ${idea.createdBy}</span>
             </div>
             <div class="idea-actions">
+                ${idea.status === 'open' ? `<button class="btn-small btn-approve" onclick="approveIdea(${idea.id})">✅ Approve</button>` : ''}
                 <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'in-progress')">Start</button>
                 <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'done')">Complete</button>
             </div>
@@ -604,6 +605,109 @@ function updateIdeaStatus(id, status) {
         renderIdeas(allIdeas);
         addLog('info', `Idea "${idea.title}" marked as ${status}`);
     }
+}
+
+async function approveIdea(id) {
+    const idea = allIdeas.find(i => i.id === id);
+    if (!idea) return;
+    
+    // Update status
+    idea.status = 'approved';
+    idea.approvedAt = new Date().toISOString();
+    renderIdeas(allIdeas);
+    addLog('success', `Idea "${idea.title}" approved by Bowz`);
+    
+    // Send approval notification to Discord
+    const planOfAttack = generatePlanOfAttack(idea);
+    
+    try {
+        await fetch('/api/notify-discord', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                channel: '1466517317403021362',
+                idea: idea,
+                plan: planOfAttack
+            })
+        });
+    } catch (e) {
+        console.log('Discord notification failed:', e);
+    }
+}
+
+function generatePlanOfAttack(idea) {
+    const plans = {
+        'Automated Trading Bot': `**Plan of Attack:**
+1. Research trading APIs (Alpaca, Interactive Brokers)
+2. Design strategy engine with S/R and MA signals
+3. Build risk management module (stop losses, position sizing)
+4. Create backtesting framework
+5. Paper trade for 2 weeks
+6. Deploy with small capital`,
+        
+        'Voice Interface for Cosmo': `**Plan of Attack:**
+1. Integrate speech-to-text (Whisper API or browser Web Speech API)
+2. Add text-to-speech for responses (ElevenLabs or browser)
+3. Create voice command parser
+4. Build wake word detection ("Hey Cosmo")
+5. Test hands-free workflows`,
+        
+        'Mobile Dashboard App': `**Plan of Attack:**
+1. Evaluate PWA vs React Native
+2. Port existing HTML/CSS to mobile framework
+3. Optimize API calls for mobile
+4. Add offline support
+5. Test on iOS/Android
+6. Deploy to app stores`,
+        
+        'Auto-Commit & Push for Code Changes': `**Plan of Attack:**
+1. Create git auto-commit script
+2. Watch filesystem for changes
+3. Generate commit messages using AI
+4. Auto-push to GitHub
+5. Add to dashboard settings
+6. Test with various file types`,
+        
+        'Smart Notification System': `**Plan of Attack:**
+1. Create priority levels (urgent/high/medium/low)
+2. Build digest mode (hourly summaries)
+3. Add timezone handling (EST)
+4. Create quiet hours settings
+5. Build notification queue
+6. Test with various scenarios`,
+        
+        'Crypto Portfolio Tracker Integration': `**Plan of Attack:**
+1. Connect to CoinGecko/CMC APIs
+2. Build portfolio input interface
+3. Calculate P&L with historical prices
+4. Add price alerts (email/Discord)
+5. Correlate with trading research
+6. Create performance charts`,
+        
+        'Self-Healing System Monitor': `**Plan of Attack:**
+1. Build service health checker
+2. Create restart scripts for each service
+3. Add notification on recovery
+4. Log all incidents
+5. Create uptime dashboard
+6. Set up cron jobs for checks`,
+        
+        'Discord Command System': `**Plan of Attack:**
+1. Create DM listener
+2. Parse commands (!deploy, !status, !task)
+3. Build command handlers
+4. Add authentication (verify it's Bowz)
+5. Create help menu
+6. Test all commands`
+    };
+    
+    return plans[idea.title] || `**Plan of Attack:**
+1. Analyze requirements
+2. Design architecture
+3. Implement core functionality
+4. Test thoroughly
+5. Deploy to production
+6. Monitor and iterate`;
 }
 
 // Load ideas on page load
