@@ -322,7 +322,7 @@ async function submitProject(e) {
     
     addLog('success', `Project "${project.name}" created - awaiting evaluation`);
     
-    // Notify Cosmo to evaluate
+    // Notify Cosmo to evaluate - queue for evaluation
     const notification = {
         type: 'project_created',
         timestamp: new Date().toISOString(),
@@ -337,12 +337,39 @@ async function submitProject(e) {
             body: JSON.stringify(notification)
         });
         if (response.ok) {
-            console.log('Notification sent successfully');
+            console.log('Notification queued for evaluation');
         } else {
             console.error('Notification failed:', await response.text());
         }
     } catch (e) {
         console.log('Project notification queued for Cosmo:', e);
+    }
+    
+    // Also send immediate Discord notification about pending review
+    try {
+        const discordNotify = {
+            type: 'project_pending_review',
+            timestamp: new Date().toISOString(),
+            project: project,
+            channel: '1466517317403021362',
+            message: `📋 **NEW PROJECT PENDING REVIEW**\n\n**${project.name}**\n${project.description}\n\nStatus: ⏳ Pending Review\nCreated: ${project.created}\n\nCosmo will evaluate and provide recommendations shortly.`
+        };
+        
+        const discordResponse = await fetch('/api/notify-discord', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordNotify)
+        });
+        
+        if (discordResponse.ok) {
+            console.log('Discord notification sent successfully');
+            addLog('success', `Discord notified about project "${project.name}"`);
+        } else {
+            console.error('Discord notification failed:', await discordResponse.text());
+        }
+    } catch (e) {
+        console.log('Discord notification error:', e);
+        // Don't block - the notification is still queued in the file
     }
 }
 
@@ -708,6 +735,28 @@ async function approveIdea(id) {
         });
     } catch (e) {
         console.log('Notification queued for Cosmo:', e);
+    }
+    
+    // Also send immediate Discord notification
+    try {
+        const discordResponse = await fetch('/api/notify-discord', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                idea: idea,
+                plan: planOfAttack,
+                channel: '1466517317403021362'
+            })
+        });
+        
+        if (discordResponse.ok) {
+            console.log('Discord notification sent for approved idea');
+            addLog('success', `Discord notified about approved idea "${idea.title}"`);
+        } else {
+            console.error('Discord notification failed:', await discordResponse.text());
+        }
+    } catch (e) {
+        console.log('Discord notification error:', e);
     }
 }
 

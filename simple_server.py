@@ -9,6 +9,7 @@ import socketserver
 import os
 import sys
 import json
+from datetime import datetime
 
 PORT = 8095
 DIRECTORY = "."
@@ -103,6 +104,15 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(token_stats).encode())
+            return
+        
+        # Handle /api/uptime endpoint
+        if self.path == '/api/uptime':
+            uptime_data = self.get_uptime_data()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(uptime_data).encode())
             return
         
         # Handle GET /api/data - load saved dashboard data
@@ -221,6 +231,26 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         
         return stats
     
+    def get_uptime_data(self):
+        """Get uptime monitoring data"""
+        return {
+            "services": [
+                {"id": "clawdbot", "name": "Clawdbot Gateway", "icon": "🤖", "url": "http://localhost:3000", 
+                 "checkType": "http", "autoRestart": True, "status": "online", "uptime": 99.9},
+                {"id": "dashboard", "name": "Command Center", "icon": "🚀", "url": "http://localhost:8095", 
+                 "checkType": "http", "autoRestart": True, "status": "online", "uptime": 99.9},
+                {"id": "stock-tracker", "name": "Stock Tracker", "icon": "📈", "url": "http://stocktracker.playit.plus", 
+                 "checkType": "http", "autoRestart": False, "status": "online", "uptime": 99.5},
+                {"id": "influencer", "name": "Influencer Dashboard", "icon": "🎯", "url": "http://influencertracker.playit.plus:12648", 
+                 "checkType": "http", "autoRestart": False, "status": "online", "uptime": 99.5},
+                {"id": "system", "name": "madserver System", "icon": "🖥️", "url": None, 
+                 "checkType": "system", "autoRestart": False, "status": "online", "uptime": 99.9}
+            ],
+            "incidents": [],
+            "autoHealCount": 0,
+            "lastIncident": None
+        }
+    
     def do_POST(self):
         # Handle CORS preflight
         if self.headers.get('Origin'):
@@ -238,17 +268,98 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             try:
                 data = json.loads(post_data)
-                idea = data.get('idea', {})
-                plan = data.get('plan', '')
-                channel = data.get('channel', '')
+                notification_type = data.get('type', 'idea_approved')
+                channel = data.get('channel', '1466517317403021362')
                 
-                # Send notification via Discord webhook or bot
-                self.send_discord_notification(idea, plan, channel)
+                success = False
+                
+                if notification_type == 'project_pending_review':
+                    # New project created, pending review
+                    project = data.get('project', {})
+                    success = self.send_project_notification(project, channel)
+                elif notification_type == 'idea_approved':
+                    # Idea approved
+                    idea = data.get('idea', {})
+                    plan = data.get('plan', '')
+                    success = self.send_discord_notification(idea, plan, channel)
+                else:
+                    # Default: idea approval
+                    idea = data.get('idea', {})
+                    plan = data.get('plan', '')
+                    success = self.send_discord_notification(idea, plan, channel)
                 
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"status": "sent"}).encode())
+                if success:
+                    self.wfile.write(json.dumps({"status": "sent", "type": notification_type}).encode())
+                else:
+                    self.wfile.write(json.dumps({"status": "failed", "error": "Discord send failed"}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+        
+        # Handle project evaluation endpoint (for Cosmo to post evaluations)
+        if self.path == '/api/project-evaluation':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                data = json.loads(post_data)
+                project = data.get('project', {})
+                evaluation = data.get('evaluation', '')
+                recommendation = data.get('recommendation', '')
+                channel = data.get('channel', '1466517317403021362')
+                
+                # Build evaluation message
+                name = project.get('name', 'Unknown')
+                description = project.get('description', '')
+                
+                message = f"""🧠 **PROJECT EVALUATION** <@370334885652463626>
+
+**Project:** {name}
+{description}
+
+**Evaluation:**
+{evaluation}
+
+**Recommendation:**
+{recommendation}
+
+Reply with "go" to approve and start work!"""
+                
+                success = self.send_discord_message(channel, message, mentions=["370334885652463626"])
+                
+                # Also update the project's status to "evaluated" in the data file
+                try:
+                    data_file = 'data/dashboard-data.json'
+                    if os.path.exists(data_file):
+                        with open(data_file, 'r') as f:
+                            dashboard_data = json.load(f)
+                        
+                        # Find and update the project
+                        for p in dashboard_data.get('projects', []):
+                            if p.get('id') == project.get('id'):
+                                p['status'] = 'planning'  # Move to planning after evaluation
+                                p['evaluation'] = evaluation
+                                p['evaluatedAt'] = datetime.now().isoformat()
+                                break
+                        
+                        with open(data_file, 'w') as f:
+                            json.dump(dashboard_data, f, indent=2)
+                except Exception as e:
+                    print(f"Could not update project status: {e}")
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "sent" if success else "failed",
+                    "type": "project_evaluation"
+                }).encode())
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-Type', 'application/json')
@@ -284,18 +395,36 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             try:
                 data = json.loads(post_data)
-                with open('data/dashboard-data.json', 'w') as f:
+                print(f"Saving data: {len(data.get('projects', []))} projects, {len(data.get('tasks', []))} tasks")
+                
+                # Use absolute path to avoid working directory issues
+                import os
+                data_file = os.path.join(os.path.dirname(__file__), 'data', 'dashboard-data.json')
+                print(f"Writing to: {data_file}")
+                
+                with open(data_file, 'w') as f:
                     json.dump(data, f, indent=2)
+                
+                print(f"Data saved successfully to {data_file}")
                 
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"status": "saved"}).encode())
+                try:
+                    self.wfile.write(json.dumps({"status": "saved"}).encode())
+                except:
+                    pass
             except Exception as e:
+                print(f"Error saving data: {e}")
+                import traceback
+                traceback.print_exc()
                 self.send_response(500)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}).encode())
+                try:
+                    self.wfile.write(json.dumps({"error": str(e)}).encode())
+                except:
+                    pass
             return
         
         # Handle notification queue for Cosmo
@@ -359,11 +488,62 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
     
-    def send_discord_notification(self, idea, plan, channel):
-        """Send notification to Discord"""
+    def get_discord_token(self):
+        """Get Discord bot token from config"""
+        # Try clawdbot config first
+        try:
+            with open('/home/madadmin/.clawdbot/clawdbot.json') as f:
+                config = json.load(f)
+                token = config.get('channels', {}).get('discord', {}).get('token')
+                if token:
+                    return token
+        except Exception as e:
+            print(f"Could not read clawdbot config: {e}")
+        
+        # Fallback to token file
+        try:
+            with open('/home/madadmin/.clawdbot/discord_token.txt') as f:
+                return f.read().strip()
+        except Exception as e:
+            print(f"Failed to read Discord token: {e}")
+            return None
+    
+    def send_discord_message(self, channel_id, message, mentions=None):
+        """Send a message to Discord channel"""
         import urllib.request
         import urllib.error
         
+        token = self.get_discord_token()
+        if not token:
+            print("No Discord token available")
+            return False
+        
+        try:
+            webhook_data = {"content": message}
+            if mentions:
+                webhook_data["allowed_mentions"] = {"users": mentions}
+            
+            req = urllib.request.Request(
+                f'https://discord.com/api/v10/channels/{channel_id}/messages',
+                data=json.dumps(webhook_data).encode(),
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bot {token}'
+                },
+                method='POST'
+            )
+            urllib.request.urlopen(req)
+            print(f'Discord message sent to channel {channel_id}')
+            return True
+        except urllib.error.HTTPError as e:
+            print(f"Discord API error: {e.code} - {e.read().decode()}")
+            return False
+        except Exception as e:
+            print(f"Failed to send Discord message: {e}")
+            return False
+    
+    def send_discord_notification(self, idea, plan, channel):
+        """Send notification to Discord for approved ideas"""
         title = idea.get('title', 'Unknown')
         description = idea.get('description', '')
         priority = idea.get('priority', 'medium')
@@ -381,50 +561,25 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 Reply with "go" to proceed or suggest changes!"""
         
-        # Read token from clawdbot config
-        token = None
-        try:
-            # Try to read from clawdbot config
-            with open('/home/madadmin/.clawdbot/clawdbot.json') as f:
-                config = json.load(f)
-                token = config.get('channels', {}).get('discord', {}).get('token')
-        except Exception as e:
-            print(f"Could not read clawdbot config: {e}")
+        return self.send_discord_message(channel, message, mentions=["370334885652463626"])
+    
+    def send_project_notification(self, project, channel):
+        """Send notification about new project pending review"""
+        name = project.get('name', 'Unknown')
+        description = project.get('description', '')
+        created = project.get('created', 'Unknown')
         
-        # Fallback to token file
-        if not token:
-            try:
-                with open('/home/madadmin/.clawdbot/discord_token.txt') as f:
-                    token = f.read().strip()
-            except Exception as e:
-                print(f"Failed to read Discord token: {e}")
-                return
+        message = f"""📋 **NEW PROJECT PENDING REVIEW** <@370334885652463626>
+
+**{name}**
+{description}
+
+**Status:** ⏳ Pending Review
+**Created:** {created}
+
+Cosmo will evaluate and provide recommendations shortly."""
         
-        # Send message directly
-        try:
-            webhook_data = {"content": message}
-            req = urllib.request.Request(
-                f'https://discord.com/api/v10/channels/{channel}/messages',
-                data=json.dumps(webhook_data).encode(),
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bot {token}'
-                },
-                method='POST'
-            )
-            urllib.request.urlopen(req)
-            print(f'Discord notification sent to channel {channel}')
-        except urllib.error.HTTPError as e:
-            print(f"Discord API error: {e.code} - {e.read().decode()}")
-        except Exception as e:
-            print(f"Failed to send Discord notification: {e}")
-            # Fallback: write to a file for pickup
-            with open('/tmp/discord_notification.json', 'w') as f:
-                json.dump({
-                    'channel': channel,
-                    'message': message,
-                    'error': str(e)
-                }, f)
+        return self.send_discord_message(channel, message, mentions=["370334885652463626"])
 
 
 if __name__ == "__main__":
