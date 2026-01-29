@@ -1,11 +1,93 @@
 {
-  "projects": [],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Stock Tracker",
+      "description": "Real-time stock monitoring dashboard",
+      "status": "complete",
+      "created": "2026-01-26"
+    },
+    {
+      "id": 2,
+      "name": "Influencer Dashboard",
+      "description": "Crypto influencer tracking system",
+      "status": "complete",
+      "created": "2026-01-26"
+    },
+    {
+      "id": 3,
+      "name": "Server Migration",
+      "description": "AWS to madserver migration",
+      "status": "complete",
+      "created": "2026-01-27"
+    },
+    {
+      "id": 4,
+      "name": "Cosmo Dashboard",
+      "description": "Project management command center",
+      "status": "in-progress",
+      "created": "2026-01-27"
+    },
+    {
+      "id": 5,
+      "name": "Email Integration",
+      "description": "Gmail monitoring and automation",
+      "status": "planning",
+      "created": "2026-01-27"
+    }
+  ],
   "tasks": [
     {
       "id": 1,
-      "title": "Test Task",
+      "title": "Set up Gmail API",
+      "project": "Email Integration",
+      "priority": "high",
+      "done": false
+    },
+    {
+      "id": 2,
+      "title": "Add ChatGPT/Codex integration",
+      "project": "Cosmo Dashboard",
+      "priority": "medium",
+      "done": true
+    },
+    {
+      "id": 3,
+      "title": "Deploy agent workforce",
+      "project": "Cosmo Dashboard",
+      "priority": "medium",
+      "done": true
+    },
+    {
+      "id": 4,
+      "title": "Security audit complete",
+      "project": "Server Migration",
+      "priority": "high",
+      "done": true
+    },
+    {
+      "id": 5,
+      "title": "Move Docker to /mnt/data",
+      "project": "Server Migration",
+      "priority": "high",
       "done": true
     }
   ],
-  "logs": []
+  "logs": [
+    {
+      "time": "2026-01-29T20:15:00-05:00",
+      "type": "success",
+      "message": "Dashboard data restored"
+    },
+    {
+      "time": "2026-01-29T20:10:00-05:00",
+      "type": "success",
+      "message": "GET endpoints added for data persistence"
+    },
+    {
+      "time": "2026-01-29T20:05:00-05:00",
+      "type": "info",
+      "message": "Cache-busting added to force fresh assets"
+    }
+  ]
 }
