@@ -489,19 +489,28 @@ function viewProject(id) {
 }
 
 // Ideas & Tickets
+let allIdeas = [];
+
 async function loadIdeas() {
     try {
         const response = await fetch('data/ideas.json');
         const data = await response.json();
-        renderIdeas(data.ideas);
+        allIdeas = data.ideas || [];
+        renderIdeas(allIdeas);
     } catch (error) {
         console.log('Ideas not loaded:', error);
+        allIdeas = [];
     }
 }
 
 function renderIdeas(ideas) {
     const container = document.getElementById('ideas-list');
     if (!container) return;
+    
+    if (ideas.length === 0) {
+        container.innerHTML = '<div class="no-ideas">No ideas found. Click "+ New Idea" to add one!</div>';
+        return;
+    }
     
     container.innerHTML = ideas.map(idea => `
         <div class="idea-card priority-${idea.priority}">
@@ -515,17 +524,86 @@ function renderIdeas(ideas) {
                 <span class="idea-assignee">👤 ${idea.assignee}</span>
                 <span>✍️ ${idea.createdBy}</span>
             </div>
+            <div class="idea-actions">
+                <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'in-progress')">Start</button>
+                <button class="btn-small" onclick="updateIdeaStatus(${idea.id}, 'done')">Complete</button>
+            </div>
         </div>
     `).join('');
 }
 
 function filterIdeas(filter) {
-    // Implement filtering
-    console.log('Filter:', filter);
+    if (filter === 'all') {
+        renderIdeas(allIdeas);
+    } else if (filter === 'bowz') {
+        renderIdeas(allIdeas.filter(i => i.assignee === 'Bowz'));
+    } else {
+        renderIdeas(allIdeas.filter(i => i.status === filter));
+    }
 }
 
 function showNewIdeaForm() {
-    alert('New idea form coming soon!');
+    openModal('New Idea / Ticket', `
+        <form onsubmit="submitIdea(event)">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="idea-title" required placeholder="What's the idea?">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="idea-desc" rows="3" placeholder="Describe the idea in detail..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="idea-priority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Assignee</label>
+                <select id="idea-assignee">
+                    <option value="team">Team</option>
+                    <option value="Cosmo">Cosmo</option>
+                    <option value="Dash">Dash</option>
+                    <option value="Lumina">Lumina</option>
+                    <option value="Aidorix">Aidorix</option>
+                    <option value="Bowz">Bowz</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Create Idea</button>
+        </form>
+    `);
+}
+
+function submitIdea(e) {
+    e.preventDefault();
+    
+    const idea = {
+        id: Date.now(),
+        title: document.getElementById('idea-title').value,
+        description: document.getElementById('idea-desc').value,
+        priority: document.getElementById('idea-priority').value,
+        status: 'open',
+        assignee: document.getElementById('idea-assignee').value,
+        created: new Date().toISOString(),
+        createdBy: 'Bowz'
+    };
+    
+    allIdeas.unshift(idea);
+    renderIdeas(allIdeas);
+    closeModal();
+    addLog('success', `New idea created: "${idea.title}"`);
+}
+
+function updateIdeaStatus(id, status) {
+    const idea = allIdeas.find(i => i.id === id);
+    if (idea) {
+        idea.status = status;
+        renderIdeas(allIdeas);
+        addLog('info', `Idea "${idea.title}" marked as ${status}`);
+    }
 }
 
 // Load ideas on page load
