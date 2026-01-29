@@ -103,6 +103,13 @@ function loadDefaultData() {
             description: 'Gmail monitoring and automation',
             status: 'planning',
             created: '2026-01-27'
+        },
+        {
+            id: 6,
+            name: 'Self-Healing System Monitor',
+            description: 'Auto-restart services + uptime dashboard tab',
+            status: 'complete',
+            created: '2026-01-29'
         }
     ];
     
