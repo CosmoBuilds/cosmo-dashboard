@@ -710,5 +710,94 @@ function generatePlanOfAttack(idea) {
 6. Monitor and iterate`;
 }
 
+// Token & Session Tracker
+let tokenStats = {
+    todayCost: 0,
+    todayTokens: 0,
+    activeSessions: 0,
+    monthCost: 0,
+    models: {},
+    sessions: []
+};
+
+async function loadTokenStats() {
+    try {
+        const response = await fetch('/api/tokens');
+        if (response.ok) {
+            tokenStats = await response.json();
+            renderTokenStats();
+        }
+    } catch (e) {
+        console.log('Token stats not available:', e);
+        // Use mock data if API not available
+        useMockTokenData();
+    }
+}
+
+function useMockTokenData() {
+    tokenStats = {
+        todayCost: 0.0234,
+        todayTokens: 15420,
+        activeSessions: 3,
+        monthCost: 0.89,
+        models: {
+            'Claude Opus': { tokens: 8200, cost: 0.0123, calls: 12 },
+            'GPT-4o-mini': { tokens: 4500, cost: 0.0027, calls: 28 },
+            'Llama 3.1 8B': { tokens: 1500, cost: 0.0000, calls: 8 },
+            'Mistral 7B': { tokens: 1220, cost: 0.0000, calls: 5 }
+        },
+        sessions: [
+            { agent: 'Cosmo', model: 'Claude Opus', status: 'active', cost: 0.0089, duration: '45m' },
+            { agent: 'Dash', model: 'GPT-4o-mini', status: 'active', cost: 0.0012, duration: '12m' },
+            { agent: 'Lumina', model: 'Llama 3.1 8B', status: 'idle', cost: 0.0000, duration: '2h 30m' }
+        ]
+    };
+    renderTokenStats();
+}
+
+function renderTokenStats() {
+    // Update summary cards
+    document.getElementById('today-cost').textContent = '$' + tokenStats.todayCost.toFixed(4);
+    document.getElementById('today-tokens').textContent = tokenStats.todayTokens.toLocaleString();
+    document.getElementById('active-sessions').textContent = tokenStats.activeSessions;
+    document.getElementById('month-cost').textContent = '$' + tokenStats.monthCost.toFixed(2);
+    
+    // Update model usage
+    const modelList = document.getElementById('model-usage');
+    if (modelList && tokenStats.models) {
+        modelList.innerHTML = Object.entries(tokenStats.models).map(([model, stats]) => `
+            <div class="model-usage-item">
+                <div class="model-name">${model}</div>
+                <div class="model-stats">
+                    ${stats.tokens.toLocaleString()} tokens<br>
+                    $${stats.cost.toFixed(4)} • ${stats.calls} calls
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Update recent sessions
+    const sessionsList = document.getElementById('recent-sessions');
+    if (sessionsList && tokenStats.sessions) {
+        sessionsList.innerHTML = tokenStats.sessions.map(session => `
+            <div class="session-item ${session.status}">
+                <div class="session-info">
+                    <span class="session-agent">${session.agent}</span>
+                    <span class="session-model">${session.model} • ${session.duration}</span>
+                </div>
+                <div class="session-cost">$${session.cost.toFixed(4)}</div>
+            </div>
+        `).join('');
+    }
+}
+
+function refreshTokenStats() {
+    loadTokenStats();
+    addLog('info', 'Token stats refreshed');
+}
+
 // Load ideas on page load
-document.addEventListener('DOMContentLoaded', loadIdeas);
+document.addEventListener('DOMContentLoaded', () => {
+    loadIdeas();
+    loadTokenStats();
+});

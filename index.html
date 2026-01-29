@@ -56,6 +56,9 @@
                     <button class="nav-btn" data-view="logs">
                         <span>📝</span> Activity Log
                     </button>
+                    <button class="nav-btn" data-view="tokens">
+                        <span>📊</span> Usage
+                    </button>
                     <button class="nav-btn" data-view="settings">
                         <span>⚙️</span> Settings
                     </button>
@@ -254,6 +257,53 @@
                     </div>
                     <div class="ideas-list" id="ideas-list">
                         <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Token/Session Tracker View -->
+                <section id="tokens-view" class="view">
+                    <div class="view-header">
+                        <h2>📊 Token & Session Tracker</h2>
+                        <button class="btn-secondary" onclick="refreshTokenStats()">🔄 Refresh</button>
+                    </div>
+                    
+                    <div class="tokens-summary">
+                        <div class="token-card">
+                            <h3>💰 Today's Cost</h3>
+                            <div class="token-value" id="today-cost">$0.00</div>
+                            <span class="token-label">USD</span>
+                        </div>
+                        <div class="token-card">
+                            <h3>📝 Today's Tokens</h3>
+                            <div class="token-value" id="today-tokens">0</div>
+                            <span class="token-label">Input + Output</span>
+                        </div>
+                        <div class="token-card">
+                            <h3>🤖 Active Sessions</h3>
+                            <div class="token-value" id="active-sessions">0</div>
+                            <span class="token-label">Current</span>
+                        </div>
+                        <div class="token-card">
+                            <h3>📅 This Month</h3>
+                            <div class="token-value" id="month-cost">$0.00</div>
+                            <span class="token-label">Estimated</span>
+                        </div>
+                    </div>
+                    
+                    <div class="tokens-details">
+                        <div class="token-section">
+                            <h3>🤖 AI Model Usage</h3>
+                            <div class="model-usage-list" id="model-usage">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        
+                        <div class="token-section">
+                            <h3>📋 Recent Sessions</h3>
+                            <div class="sessions-list" id="recent-sessions">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
                     </div>
                 </section>
 
