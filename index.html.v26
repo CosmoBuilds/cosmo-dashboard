@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cosmo Command Center</title>
-    <link rel="stylesheet" href="css/styles.css?v=19">
+    <link rel="stylesheet" href="css/styles.css?v=17">
 </head>
 <body>
     <div class="dashboard">
@@ -26,10 +26,6 @@
                 <div class="stat">
                     <span class="stat-value" id="system-status">●</span>
                     <span class="stat-label">System Status</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="ws-status" style="font-size: 0.7rem;">🟡 Connecting...</span>
-                    <span class="stat-label">Live Updates</span>
                 </div>
             </div>
             <div class="header-time">
@@ -585,7 +581,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="js/app.js?v=29"></script>
+    <script src="js/app.js?v=26"></script>
 </body>
 </html>

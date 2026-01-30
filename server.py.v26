@@ -2,24 +2,18 @@
 """
 Cosmo Dashboard - Robust SQLite Backend
 Handles all data persistence with proper database
-Version: v29 - Comprehensive Activity Logging
 """
 
 import sqlite3
 import json
 import os
 import subprocess
-import time
-import threading
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 CORS(app)
-app.config['SECRET_KEY'] = 'cosmo-dashboard-secret'
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 DB_PATH = '/home/madadmin/clawd/cosmo-dashboard/data/dashboard.db'
 NOTIFICATIONS_FILE = '/home/madadmin/clawd/data/notifications.json'
@@ -301,53 +295,15 @@ def get_logs():
     conn.close()
     return jsonify(logs)
 
-def add_log(log_type, message, broadcast=True, details=None):
-    """Add log entry and optionally broadcast via WebSocket"""
+def add_log(log_type, message):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    timestamp = datetime.now().isoformat()
     cursor.execute('''
         INSERT INTO activity_log (time, type, message)
         VALUES (?, ?, ?)
-    ''', (timestamp, log_type, message))
+    ''', (datetime.now().isoformat(), log_type, message))
     conn.commit()
     conn.close()
-    
-    # Also write to detailed JSON log
-    log_entry = {
-        'time': timestamp,
-        'type': log_type,
-        'message': message,
-        'details': details or {}
-    }
-    
-    detailed_log = '/home/madadmin/clawd/data/detailed-activity.json'
-    logs = []
-    if os.path.exists(detailed_log):
-        try:
-            with open(detailed_log, 'r') as f:
-                logs = json.load(f)
-        except:
-            logs = []
-    if not isinstance(logs, list):
-        logs = []
-    logs.append(log_entry)
-    logs = logs[-10000:]  # Keep last 10k
-    with open(detailed_log, 'w') as f:
-        json.dump(logs, f, indent=2)
-    
-    # Broadcast to all connected clients
-    if broadcast:
-        try:
-            socketio.emit('new_activity', {
-                'time': timestamp,
-                'type': log_type,
-                'message': message
-            })
-        except:
-            pass  # Socket not initialized yet
-    
-    print(f"📝 [{log_type.upper()}] {message}")
 
 # ==================== NOTIFICATIONS ====================
 
@@ -768,235 +724,9 @@ def get_subagents():
 
 # ==================== FILE UPLOADS ====================
 
-UPLOAD_FOLDER = '/home/madadmin/.clawdbot/media/inbound'
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'txt', 'md', 'json', 'csv', 'zip', 'py', 'js', 'html', 'css', 'mp3', 'wav', 'ogg', 'm4a'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/upload.html')
-def upload_page():
-    return send_from_directory('.', 'upload.html')
-
-@app.route('/dashboard')
-def dashboard():
-    """Command Center is now at /dashboard"""
-    return send_from_directory('.', 'index.html')
-
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    """Handle file uploads from the web interface"""
-    if 'file' not in request.files:
-        add_log('error', 'File upload attempted with no file', broadcast=False)
-        return jsonify({'success': False, 'error': 'No file provided'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        add_log('error', 'File upload attempted with empty filename', broadcast=False)
-        return jsonify({'success': False, 'error': 'No file selected'}), 400
-    
-    if file and allowed_file(file.filename):
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        unique_name = f"{uuid.uuid4()}.{ext}"
-        filepath = os.path.join(UPLOAD_FOLDER, unique_name)
-        
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        file.save(filepath)
-        file_size = os.path.getsize(filepath)
-        
-        # Log the upload
-        add_log('info', f'📤 File uploaded: "{file.filename}" ({format_file_size(file_size)}) by user')
-        
-        # Write notification for Cosmo
-        write_notification({
-            'type': 'file_uploaded',
-            'timestamp': datetime.now().isoformat(),
-            'filename': file.filename,
-            'path': filepath,
-            'size': file_size,
-            'channel': '1466517317403021362'
-        })
-        
-        return jsonify({
-            'success': True,
-            'filename': file.filename,
-            'path': filepath,
-            'size': file_size,
-            'message': 'File uploaded successfully'
-        })
-    else:
-        add_log('warning', f'File upload rejected: "{file.filename}" - type not allowed')
-        return jsonify({
-            'success': False,
-            'error': 'File type not allowed'
-        }), 400
-
-@app.route('/api/uploads/recent', methods=['GET'])
-def get_recent_uploads():
-    """Get list of recent uploads"""
-    try:
-        files = []
-        if os.path.exists(UPLOAD_FOLDER):
-            for f in os.listdir(UPLOAD_FOLDER):
-                filepath = os.path.join(UPLOAD_FOLDER, f)
-                if os.path.isfile(filepath):
-                    stat = os.stat(filepath)
-                    files.append({
-                        'name': f,
-                        'size': format_file_size(stat.st_size),
-                        'path': filepath,
-                        'time': datetime.fromtimestamp(stat.st_mtime).isoformat()
-                    })
-        files.sort(key=lambda x: x['time'], reverse=True)
-        return jsonify(files[:10])
-    except Exception as e:
-        add_log('error', f'Error listing uploads: {str(e)}')
-        return jsonify([])
-
-@app.route('/api/download/<filename>')
-def download_file(filename):
-    """Download a file from the upload folder"""
-    try:
-        # Log the download
-        add_log('info', f'📥 File downloaded: "{filename}"')
-        return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
-    except Exception as e:
-        add_log('error', f'File download failed: "{filename}" - {str(e)}')
-        return jsonify({'error': 'File not found'}), 404
-
-@app.route('/api/files')
-def list_files():
-    """List all files (for 2-way transfer)"""
-    try:
-        files = []
-        if os.path.exists(UPLOAD_FOLDER):
-            for f in os.listdir(UPLOAD_FOLDER):
-                filepath = os.path.join(UPLOAD_FOLDER, f)
-                if os.path.isfile(filepath):
-                    stat = os.stat(filepath)
-                    files.append({
-                        'name': f,
-                        'original_name': f,
-                        'size': stat.st_size,
-                        'size_formatted': format_file_size(stat.st_size),
-                        'uploaded_at': datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                        'download_url': f'/api/download/{f}'
-                    })
-        files.sort(key=lambda x: x['uploaded_at'], reverse=True)
-        add_log('info', f'📋 File list retrieved: {len(files)} files')
-        return jsonify({'files': files})
-    except Exception as e:
-        add_log('error', f'Error listing files: {str(e)}')
-        return jsonify({'files': [], 'error': str(e)})
-
-def format_file_size(size):
-    for unit in ['B', 'KB', 'MB', 'GB']:
-        if size < 1024.0:
-            return f"{size:.1f} {unit}"
-        size /= 1024.0
-    return f"{size:.1f} TB"
-
-# ==================== WEBSOCKET REAL-TIME UPDATES ====================
-
-@socketio.on('connect')
-def handle_connect():
-    """Client connected"""
-    print('🔌 Client connected')
-    emit('connected', {'status': 'connected', 'timestamp': datetime.now().isoformat()})
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    """Client disconnected"""
-    print('🔌 Client disconnected')
-
-@socketio.on('subscribe_updates')
-def handle_subscribe():
-    """Subscribe to real-time updates"""
-    print('📡 Client subscribed to updates')
-    emit('subscribed', {'channel': 'dashboard_updates'})
-
-def broadcast_update(update_type, data):
-    """Broadcast update to all connected clients"""
-    socketio.emit('update', {
-        'type': update_type,
-        'data': data,
-        'timestamp': datetime.now().isoformat()
-    })
-
-def background_updater():
-    """Background thread to emit periodic updates"""
-    while True:
-        try:
-            # Emit system stats every 5 seconds (using /proc fallback)
-            try:
-                import psutil
-                stats = {
-                    'cpu': psutil.cpu_percent(interval=0.1),
-                    'memory': psutil.virtual_memory().percent,
-                    'disk': psutil.disk_usage('/').percent
-                }
-            except ImportError:
-                # Fallback to reading from /proc
-                stats = get_system_stats_fallback()
-            
-            broadcast_update('system_stats', stats)
-            
-        except Exception as e:
-            print(f"Background updater error: {e}")
-        
-        time.sleep(5)
-
-def get_system_stats_fallback():
-    """Get system stats without psutil"""
-    try:
-        # CPU from /proc/stat
-        with open('/proc/stat') as f:
-            line = f.readline()
-            fields = line.split()
-            if fields[0] == 'cpu':
-                total = sum(int(x) for x in fields[1:5])
-                idle = int(fields[4])
-                cpu = 100 * (1 - idle / total) if total > 0 else 0
-            else:
-                cpu = 0
-        
-        # Memory from /proc/meminfo
-        with open('/proc/meminfo') as f:
-            meminfo = f.read()
-            mem_total = 0
-            mem_available = 0
-            for line in meminfo.split('\n'):
-                if line.startswith('MemTotal:'):
-                    mem_total = int(line.split()[1]) * 1024
-                elif line.startswith('MemAvailable:'):
-                    mem_available = int(line.split()[1]) * 1024
-            memory = ((mem_total - mem_available) / mem_total * 100) if mem_total > 0 else 0
-        
-        # Disk
-        stat = os.statvfs('/')
-        total = stat.f_blocks * stat.f_frsize
-        free = stat.f_bfree * stat.f_frsize
-        disk = ((total - free) / total * 100) if total > 0 else 0
-        
-        return {
-            'cpu': round(cpu, 1),
-            'memory': round(memory, 1),
-            'disk': round(disk, 1)
-        }
-    except Exception as e:
-        print(f"Fallback stats error: {e}")
-        return {'cpu': 0, 'memory': 0, 'disk': 0}
-
 if __name__ == '__main__':
-    print("🚀 Starting Cosmo Dashboard Server v27 (WebSocket Enabled)...")
+    print("🚀 Starting Cosmo Dashboard Server...")
     print(f"📊 Database: {DB_PATH}")
     print(f"🔔 Notifications: {NOTIFICATIONS_FILE}")
     print(f"🐙 GitHub Approval: {PENDING_COMMITS_FILE}")
-    
-    # Start background updater thread
-    updater_thread = threading.Thread(target=background_updater, daemon=True)
-    updater_thread.start()
-    print("📡 Background updater started")
-    
-    # Run with SocketIO (allow_unsafe_werkzeug for production use)
-    socketio.run(app, host='0.0.0.0', port=8095, debug=False, allow_unsafe_werkzeug=True)
+    app.run(host='0.0.0.0', port=8095, debug=False)

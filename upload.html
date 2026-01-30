@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmo File Drop - Upload Files</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #f1f5f9;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #60a5fa;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            background: rgba(96, 165, 250, 0.05);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            background: rgba(96, 165, 250, 0.1);
+            border-color: #a78bfa;
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-hint {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        #file-input {
+            display: none;
+        }
+        
+        .file-list {
+            margin-top: 2rem;
+        }
+        
+        .file-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .file-icon {
+            font-size: 2rem;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .file-size {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        
+        .file-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-uploading {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
+        
+        .status-done {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+        
+        .status-error {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        
+        .recent-files {
+            margin-top: 3rem;
+        }
+        
+        .recent-files h2 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+        }
+
+        .login-error {
+            color: #f87171;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-box">
+            <h1>🔒 Cosmo File Drop</h1>
+            <p class="subtitle">Authorized access only</p>
+            <div class="login-form">
+                <input type="password" id="access-code" placeholder="Enter access code" class="login-input">
+                <button onclick="checkAccess()" class="login-btn">Access</button>
+                <p id="login-error" class="login-error"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Upload Interface (hidden until auth) -->
+    <div class="container" id="main-container" style="display: none;">
+        <a href="/dashboard" class="back-link">← Back to Command Center</a>
+        
+        <h1>📁 Cosmo File Drop</h1>
+        <p class="subtitle">Upload files directly to Cosmo for processing</p>
+        
+        <div class="upload-zone" id="upload-zone">
+            <div class="upload-icon">📤</div>
+            <div class="upload-text">Drop files here or click to browse</div>
+            <div class="upload-hint">Supports: PDF, Images, TXT, MD, JSON, CSV (max 50MB)</div>
+            <input type="file" id="file-input" multiple accept="*/*">
+        </div>
+        
+        <div class="file-list" id="file-list"></div>
+        
+        <div class="recent-files" id="recent-files" style="display: none;">
+            <h2>📋 Recently Uploaded</h2>
+            <div id="recent-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // Access control - only Bowz and Nebula
+        const VALID_CODES = ['bowz5817', 'nebula9700', 'BOWZ5817', 'NEBULA9700'];
+        
+        function checkAccess() {
+            const code = document.getElementById('access-code').value.trim();
+            const errorEl = document.getElementById('login-error');
+            
+            if (VALID_CODES.includes(code)) {
+                // Success - show main interface
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-container').style.display = 'block';
+                
+                // Store auth in session
+                sessionStorage.setItem('fileDropAuth', 'true');
+                sessionStorage.setItem('fileDropUser', code);
+                
+                // Load recent files
+                loadRecentFiles();
+            } else {
+                errorEl.textContent = '❌ Invalid access code';
+                document.getElementById('access-code').value = '';
+            }
+        }
+        
+        // Check if already authenticated
+        if (sessionStorage.getItem('fileDropAuth') === 'true') {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-container').style.display = 'block';
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('access-code')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAccess();
+        });
+        
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const recentFiles = document.getElementById('recent-files');
+        const recentList = document.getElementById('recent-list');
+        
+        // Drag and drop handlers
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                uploadFile(file);
+            });
+        }
+        
+        function uploadFile(file) {
+            const fileId = Date.now() + Math.random().toString(36).substr(2, 9);
+            
+            // Create file item UI
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.id = `file-${fileId}`;
+            
+            const fileIcon = getFileIcon(file.name);
+            const fileSize = formatFileSize(file.size);
+            
+            fileItem.innerHTML = `
+                <span class="file-icon">${fileIcon}</span>
+                <div class="file-info">
+                    <div class="file-name">${escapeHtml(file.name)}</div>
+                    <div class="file-size">${fileSize}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-${fileId}" style="width: 0%"></div>
+                    </div>
+                </div>
+                <span class="file-status status-uploading" id="status-${fileId}">Uploading...</span>
+            `;
+            
+            fileList.appendChild(fileItem);
+            
+            // Upload via fetch
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`status-${fileId}`).textContent = 'Done!';
+                    document.getElementById(`status-${fileId}`).className = 'file-status status-done';
+                    document.getElementById(`progress-${fileId}`).style.width = '100%';
+                    
+                    // Add to recent files
+                    addToRecentFiles(file.name, fileSize, data.path);
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            })
+            .catch(error => {
+                document.getElementById(`status-${fileId}`).textContent = 'Error';
+                document.getElementById(`status-${fileId}`).className = 'file-status status-error';
+                console.error('Upload error:', error);
+            });
+            
+            // Simulate progress (since we can't track actual progress easily)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 90) progress = 90;
+                const progressBar = document.getElementById(`progress-${fileId}`);
+                if (progressBar) progressBar.style.width = progress + '%';
+            }, 200);
+            
+            // Clear interval when done
+            setTimeout(() => clearInterval(progressInterval), 5000);
+        }
+        
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'pdf': '📄',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'txt': '📝',
+                'md': '📝',
+                'json': '📋',
+                'csv': '📊',
+                'zip': '📦',
+                'py': '🐍',
+                'js': '📜',
+                'mp3': '🎵',
+                'wav': '🎵',
+                'ogg': '🎵',
+                'm4a': '🎵'
+            };
+            return icons[ext] || '📎';
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function addToRecentFiles(name, size, path) {
+            recentFiles.style.display = 'block';
+            
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            item.innerHTML = `
+                <span class="file-icon">${getFileIcon(name)}</span>
+                <div class="file-info">
+                    <div class="file-name">${escapeHtml(name)}</div>
+                    <div class="file-size">${size}</div>
+                </div>
+                <span class="file-status status-done">✓ Received</span>
+            `;
+            
+            recentList.insertBefore(item, recentList.firstChild);
+            
+            // Keep only last 10
+            while (recentList.children.length > 10) {
+                recentList.removeChild(recentList.lastChild);
+            }
+        }
+        
+        // Load recent files
+        function loadRecentFiles() {
+            fetch('/api/uploads/recent')
+                .then(r => r.json())
+                .then(files => {
+                    if (files && files.length > 0) {
+                        recentFiles.style.display = 'block';
+                        recentList.innerHTML = ''; // Clear existing
+                        files.forEach(f => {
+                            addToRecentFiles(f.name, f.size, f.path);
+                        });
+                    }
+                })
+                .catch(() => {});
+        }
+        
+        // Load on startup if authenticated
+        if (sessionStorage.getItem('fileDropAuth') === 'true') {
+            loadRecentFiles();
+        }
+    </script>
+</body>
+</html>

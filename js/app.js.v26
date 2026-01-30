@@ -1,5 +1,4 @@
 // Cosmo Dashboard - Main Application with SQLite Backend
-// Version: v29 - Comprehensive Activity Logging
 
 // State
 const state = {
@@ -13,69 +12,9 @@ const state = {
 // Current filter for ideas
 let currentIdeaFilter = 'all';
 
-// WebSocket Connection
-let socket = null;
-let wsConnected = false;
-
-function initWebSocket() {
-    try {
-        socket = io();
-        
-        socket.on('connect', () => {
-            console.log('🔌 WebSocket connected');
-            wsConnected = true;
-            updateConnectionStatus(true);
-            socket.emit('subscribe_updates');
-        });
-        
-        socket.on('disconnect', () => {
-            console.log('🔌 WebSocket disconnected');
-            wsConnected = false;
-            updateConnectionStatus(false);
-        });
-        
-        socket.on('update', (data) => {
-            console.log('📡 Real-time update:', data);
-            handleRealtimeUpdate(data);
-        });
-        
-        socket.on('new_activity', (data) => {
-            console.log('📝 New activity:', data);
-            // Add to logs array and re-render
-            state.logs.unshift(data);
-            if (state.logs.length > 100) state.logs.pop();
-            renderLogs();
-            
-            // Show notification
-            showActivityNotification(data);
-        });
-        
-    } catch (e) {
-        console.error('WebSocket init error:', e);
-    }
-}
-
-function updateConnectionStatus(connected) {
-    const indicator = document.getElementById('ws-status');
-    if (indicator) {
-        indicator.textContent = connected ? '🟢 Live' : '🔴 Offline';
-        indicator.className = connected ? 'status-online' : 'status-offline';
-    }
-}
-
-function handleRealtimeUpdate(update) {
-    if (update.type === 'system_stats') {
-        // Update system stats in real-time
-        document.getElementById('sys-cpu').textContent = update.data.cpu + '%';
-        document.getElementById('sys-mem').textContent = update.data.memory + '%';
-        document.getElementById('sys-disk').textContent = update.data.disk + '%';
-    }
-}
-
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
-    initWebSocket(); // Initialize WebSocket connection
     updateTime();
     setInterval(updateTime, 1000);
     loadAllData();
@@ -170,26 +109,16 @@ function updateStats() {
 
 // ==================== PROJECTS ====================
 
-function truncateDescription(desc, maxLength = 60) {
-    if (!desc) return '';
-    if (desc.length <= maxLength) return desc;
-    return desc.substring(0, maxLength) + '...';
-}
-
 function renderProjectsPreview() {
     const container = document.getElementById('projects-preview-list');
     const activeProjects = state.projects.filter(p => p.status !== 'complete').slice(0, 3);
     
-    container.innerHTML = activeProjects.map(p => {
-        const shortDesc = truncateDescription(p.description);
-        const hasLongDesc = p.description && p.description.length > 60;
-        return `
-        <div class="project-card-mini" onclick="viewProject(${p.id})" style="cursor: pointer;">
+    container.innerHTML = activeProjects.map(p => `
+        <div class="project-card-mini">
             <h4>${p.name}</h4>
-            <p class="project-desc-short" id="desc-preview-${p.id}">${shortDesc}</p>
-            ${hasLongDesc ? `<span class="show-more-link" onclick="event.stopPropagation(); toggleDesc(${p.id}, '${escapeHtml(p.description).replace(/'/g, "\\'")}')">Show more</span>` : ''}
+            <p>${p.description || ''}</p>
         </div>
-    `}).join('') || '<p style="color: var(--text-secondary)">No active projects</p>';
+    `).join('') || '<p style="color: var(--text-secondary)">No active projects</p>';
 }
 
 function renderProjectsBoard() {
@@ -201,47 +130,13 @@ function renderProjectsBoard() {
         
         const projects = state.projects.filter(p => p.status === status);
         
-        container.innerHTML = projects.map(p => {
-            const shortDesc = truncateDescription(p.description);
-            const hasLongDesc = p.description && p.description.length > 60;
-            return `
-            <div class="project-card-mini" onclick="viewProject(${p.id})" style="cursor: pointer;">
+        container.innerHTML = projects.map(p => `
+            <div class="project-card-mini" onclick="viewProject(${p.id})">
                 <h4>${p.name}</h4>
-                <p class="project-desc-short" id="desc-board-${p.id}">${shortDesc}</p>
-                ${hasLongDesc ? `<span class="show-more-link" onclick="event.stopPropagation(); toggleDescBoard(${p.id}, '${escapeHtml(p.description).replace(/'/g, "\\'")}')">Show more</span>` : ''}
+                <p>${p.description || ''}</p>
             </div>
-        `}).join('') || '<p style="color: var(--text-secondary); font-size: 0.8rem;">No projects</p>';
+        `).join('') || '<p style="color: var(--text-secondary); font-size: 0.8rem;">No projects</p>';
     });
-}
-
-function toggleDesc(projectId, fullDesc) {
-    const el = document.getElementById(`desc-preview-${projectId}`);
-    const isExpanded = el.classList.contains('expanded');
-    
-    if (isExpanded) {
-        el.textContent = truncateDescription(fullDesc);
-        el.classList.remove('expanded');
-        el.nextElementSibling.textContent = 'Show more';
-    } else {
-        el.textContent = fullDesc;
-        el.classList.add('expanded');
-        el.nextElementSibling.textContent = 'Show less';
-    }
-}
-
-function toggleDescBoard(projectId, fullDesc) {
-    const el = document.getElementById(`desc-board-${projectId}`);
-    const isExpanded = el.classList.contains('expanded');
-    
-    if (isExpanded) {
-        el.textContent = truncateDescription(fullDesc);
-        el.classList.remove('expanded');
-        el.nextElementSibling.textContent = 'Show more';
-    } else {
-        el.textContent = fullDesc;
-        el.classList.add('expanded');
-        el.nextElementSibling.textContent = 'Show less';
-    }
 }
 
 async function createProject() {
@@ -925,53 +820,6 @@ async function refreshSubagents() {
     }
     
     if (btn) btn.textContent = '🔄 Refresh Workers';
-}
-
-function showActivityNotification(activity) {
-    // Create toast notification
-    const toast = document.createElement('div');
-    toast.className = 'activity-toast';
-    toast.innerHTML = `
-        <div class="toast-content">
-            <span class="toast-type">${getActivityIcon(activity.type)}</span>
-            <span class="toast-message">${escapeHtml(activity.message).substring(0, 80)}${activity.message.length > 80 ? '...' : ''}</span>
-            <span class="toast-time">${new Date(activity.time).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
-        </div>
-    `;
-    
-    // Add styles
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 12px 16px;
-        max-width: 400px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Remove after 5 seconds
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
-}
-
-function getActivityIcon(type) {
-    const icons = {
-        'success': '✅',
-        'error': '❌',
-        'warning': '⚠️',
-        'info': 'ℹ️',
-        'system': '⚙️'
-    };
-    return icons[type] || '📝';
 }
 
 console.log('🚀 Cosmo Dashboard loaded - SQLite backend');

@@ -1409,3 +1409,96 @@ body {
     font-size: 0.75rem;
     color: var(--text-secondary);
 }
+
+/* Expandable Project Descriptions */
+.project-desc-short {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.project-desc-short.expanded {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.show-more-link {
+    color: var(--accent-blue);
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 0.25rem;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.show-more-link:hover {
+    text-decoration: underline;
+    color: var(--text-primary);
+}
+
+.project-card-mini {
+    transition: all 0.2s;
+}
+
+.project-card-mini:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Activity Toast Notifications */
+.activity-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 16px;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast-type {
+    font-size: 1.2rem;
+}
+
+.toast-message {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.toast-time {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
