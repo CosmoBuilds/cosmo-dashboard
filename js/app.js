@@ -1141,75 +1141,78 @@ window.showGitHistory = showGitHistory;
 
 // ==================== STAR WARS KNOWLEDGE BASE ====================
 
+async function loadStarWarsStats() {
+    try {
+        const res = await fetch('/api/starwars/stats');
+        const data = await res.json();
+        
+        document.getElementById('sw-eras').textContent = data.eras || 7;
+        document.getElementById('sw-characters').textContent = data.characters || 'Loading...';
+        document.getElementById('sw-factions').textContent = data.factions || 'Loading...';
+        document.getElementById('sw-videos').textContent = data.videos || 'In Progress';
+    } catch (e) {
+        console.error('Star Wars stats error:', e);
+    }
+}
+
 async function queryStarWars(query) {
     const resultsDiv = document.getElementById('starwars-query-results');
     if (!resultsDiv) return;
     
     resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = '<p>⏳ Loading...</p>';
+    resultsDiv.innerHTML = '<p>⏳ Loading from database...</p>';
     
-    // Sample data for now - will connect to real database
-    const sampleData = {
-        'eras': [
-            { name: 'Before the Republic', period: '-25,000 to -1,032 BBY', desc: 'Early galactic history, first Jedi' },
-            { name: 'Old Republic Era', period: '-1,032 to -22 BBY', desc: 'Sith Wars, Rule of Two established' },
-            { name: 'Fall of the Republic', period: '-22 to -19 BBY', desc: 'Clone Wars, Republic becomes Empire' },
-            { name: 'Imperial Era', period: '-19 BBY to 4 ABY', desc: 'Galactic Empire, Jedi Purge' },
-            { name: 'New Republic Era', period: '4 ABY to 34 ABY', desc: 'New Republic, First Order rises' }
-        ],
-        'characters': [
-            { name: 'Darth Maul', species: 'Zabrak', role: 'Sith Lord', status: 'Legend 🔴' },
-            { name: 'Darth Sidious', species: 'Human', role: 'Dark Lord', status: 'Emperor' },
-            { name: 'Obi-Wan Kenobi', species: 'Human', role: 'Jedi Master', status: 'Hero' }
-        ],
-        'factions': [
-            { name: 'Sith Order', type: 'Dark Side', leader: 'Darth Sidious' },
-            { name: 'Jedi Order', type: 'Light Side', leader: 'Yoda' },
-            { name: 'Shadow Collective', type: 'Crime Syndicate', leader: 'Darth Maul' },
-            { name: 'Crimson Dawn', type: 'Crime Syndicate', leader: 'Maul (secret)' }
-        ],
-        'darth-maul': {
-            name: 'Darth Maul',
-            born: '54 BBY',
-            died: '2 BBY',
-            species: 'Zabrak (Dathomirian)',
-            master: 'Darth Sidious',
-            lightsaber: 'Double-bladed red',
-            quote: 'He will avenge us...',
-            bio: 'Sith apprentice who survived being cut in half. Became crime lord of Shadow Collective and Crimson Dawn. Died on Tatooine in final duel with Obi-Wan Kenobi.'
+    try {
+        let endpoint;
+        if (query === 'darth-maul') {
+            endpoint = '/api/starwars/character/Darth Maul';
+        } else {
+            endpoint = `/api/starwars/${query}`;
         }
-    };
-    
-    const data = sampleData[query];
-    
-    if (Array.isArray(data)) {
-        resultsDiv.innerHTML = `
-            <h4>${query.charAt(0).toUpperCase() + query.slice(1)}</h4>
-            <div style="display: grid; gap: 10px;">
-                ${data.map(item => `
-                    <div style="padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
-                        ${Object.entries(item).map(([k, v]) => `
-                            <div><strong>${k}:</strong> ${v}</div>
-                        `).join('')}
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } else if (data) {
-        resultsDiv.innerHTML = `
-            <h4>🔴 ${data.name}</h4>
-            <div style="padding: 15px; background: var(--bg-secondary); border-radius: 6px;">
-                ${Object.entries(data).map(([k, v]) => `
-                    <div style="margin: 5px 0;"><strong>${k}:</strong> ${v}</div>
-                `).join('')}
-            </div>
-        `;
-    } else {
-        resultsDiv.innerHTML = '<p>❌ Query not found</p>';
+        
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        
+        if (data.error) {
+            resultsDiv.innerHTML = `<p>❌ ${data.error}</p>`;
+            return;
+        }
+        
+        if (Array.isArray(data)) {
+            resultsDiv.innerHTML = `
+                <h4>${query.charAt(0).toUpperCase() + query.slice(1)} (${data.length} entries)</h4>
+                <div style="display: grid; gap: 10px; max-height: 400px; overflow-y: auto;">
+                    ${data.map(item => `
+                        <div style="padding: 10px; background: var(--bg-secondary); border-radius: 6px; text-align: left;">
+                            ${Object.entries(item).filter(([k]) => k !== 'id').map(([k, v]) => `
+                                <div style="margin: 3px 0; font-size: 0.9rem;"><strong>${k}:</strong> ${v}</div>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = `
+                <h4>🔴 ${data.name || query}</h4>
+                <div style="padding: 15px; background: var(--bg-secondary); border-radius: 6px; text-align: left;">
+                    ${Object.entries(data).filter(([k]) => k !== 'id').map(([k, v]) => `
+                        <div style="margin: 5px 0;"><strong>${k}:</strong> ${v}</div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    } catch (e) {
+        resultsDiv.innerHTML = `<p>❌ Error loading data: ${e.message}</p>`;
     }
 }
 
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadStarWarsStats();
+});
+
 window.queryStarWars = queryStarWars;
+window.loadStarWarsStats = loadStarWarsStats;
 
 // ==================== SUB-AGENT MONITORING ====================
 

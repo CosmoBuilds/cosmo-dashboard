@@ -268,7 +268,10 @@
         <div class="file-list" id="file-list"></div>
         
         <div class="recent-files" id="recent-files" style="display: none;">
-            <h2>📋 Recently Uploaded</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>📋 Recently Uploaded</h2>
+                <button onclick="loadRecentFiles()" style="background: #60a5fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🔄 Refresh</button>
+            </div>
             <div id="recent-list"></div>
         </div>
         
@@ -480,18 +483,27 @@
         
         // Load recent files
         function loadRecentFiles() {
+            console.log('Loading recent files...');
             fetch('/api/uploads/recent')
                 .then(r => r.json())
                 .then(files => {
+                    console.log('Recent files:', files);
+                    recentFiles.style.display = 'block';
+                    recentList.innerHTML = ''; // Clear existing
+                    
                     if (files && files.length > 0) {
-                        recentFiles.style.display = 'block';
-                        recentList.innerHTML = ''; // Clear existing
                         files.forEach(f => {
                             addToRecentFiles(f.name, f.size, f.path);
                         });
+                    } else {
+                        recentList.innerHTML = '<p style="color: #94a3b8; padding: 20px;">No files uploaded yet</p>';
                     }
                 })
-                .catch(() => {});
+                .catch(e => {
+                    console.error('Error loading recent files:', e);
+                    recentFiles.style.display = 'block';
+                    recentList.innerHTML = '<p style="color: #ef4444; padding: 20px;">❌ Error loading files. Check console.</p>';
+                });
         }
         
         // Load on startup if authenticated

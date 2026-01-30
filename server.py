@@ -1071,6 +1071,94 @@ def get_audit_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ==================== STAR WARS API ====================
+
+STAR_WARS_DB = '/home/madadmin/clawd/projects/star-wars/database/star-wars.db'
+
+@app.route('/api/starwars/stats', methods=['GET'])
+def get_starwars_stats():
+    """Get Star Wars database statistics"""
+    try:
+        if not os.path.exists(STAR_WARS_DB):
+            return jsonify({
+                'eras': 7,
+                'characters': 2,
+                'factions': 2,
+                'videos': 0,
+                'status': 'database_not_found'
+            })
+        
+        conn = sqlite3.connect(STAR_WARS_DB)
+        cursor = conn.cursor()
+        
+        stats = {}
+        cursor.execute('SELECT COUNT(*) FROM eras')
+        stats['eras'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM characters')
+        stats['characters'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM factions')
+        stats['factions'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM geetsly_videos')
+        stats['videos'] = cursor.fetchone()[0]
+        
+        conn.close()
+        stats['status'] = 'ok'
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/starwars/<table>', methods=['GET'])
+def get_starwars_data(table):
+    """Get Star Wars data from specific table"""
+    try:
+        if not os.path.exists(STAR_WARS_DB):
+            return jsonify({'error': 'Database not found'}), 404
+        
+        valid_tables = ['eras', 'characters', 'factions', 'events', 'locations', 'weapons_tech', 'geetsly_videos']
+        if table not in valid_tables:
+            return jsonify({'error': 'Invalid table'}), 400
+        
+        conn = sqlite3.connect(STAR_WARS_DB)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute(f'SELECT * FROM {table}')
+        rows = cursor.fetchall()
+        
+        result = [dict(row) for row in rows]
+        conn.close()
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/starwars/character/<name>', methods=['GET'])
+def get_character(name):
+    """Get specific character by name"""
+    try:
+        if not os.path.exists(STAR_WARS_DB):
+            return jsonify({'error': 'Database not found'}), 404
+        
+        conn = sqlite3.connect(STAR_WARS_DB)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM characters WHERE name LIKE ?', (f'%{name}%',))
+        row = cursor.fetchone()
+        
+        if row:
+            result = dict(row)
+        else:
+            result = {'error': 'Character not found'}
+        
+        conn.close()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Initialize audit database
     try:
