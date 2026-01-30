@@ -16,6 +16,26 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
+# Audit logging setup
+AUDIT_DB = '/home/madadmin/clawd/data/audit.db'
+
+def log_audit(actor, action, target_type=None, target_id=None, old_value=None, new_value=None, details=None):
+    """Log audit events"""
+    try:
+        conn = sqlite3.connect(AUDIT_DB)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO audit_log (timestamp, actor, action, target_type, target_id, old_value, new_value, details)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (datetime.now().isoformat(), actor, action, target_type, target_id,
+              json.dumps(old_value) if old_value else None,
+              json.dumps(new_value) if new_value else None,
+              json.dumps(details) if details else None))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Audit log error: {e}")
+
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = 'cosmo-dashboard-secret'
@@ -138,6 +158,10 @@ def create_project():
     
     # Add to activity log
     add_log('success', f'Project "{data.get("name")}" created - awaiting evaluation')
+    
+    # Audit log
+    log_audit('Bowz', 'CREATE_PROJECT', 'project', str(data.get('id')), 
+              None, {'name': data.get('name'), 'description': data.get('description')})
     
     return jsonify({'status': 'created', 'id': data.get('id')})
 
@@ -987,11 +1011,90 @@ def get_system_stats_fallback():
         print(f"Fallback stats error: {e}")
         return {'cpu': 0, 'memory': 0, 'disk': 0}
 
+# ==================== AUDIT LOG ENDPOINTS ====================
+
+@app.route('/api/audit', methods=['GET'])
+def get_audit_log():
+    """Get audit log entries"""
+    try:
+        limit = request.args.get('limit', 100, type=int)
+        conn = sqlite3.connect(AUDIT_DB)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT timestamp, actor, action, target_type, target_id, details
+            FROM audit_log
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return jsonify([{
+            'timestamp': r[0],
+            'actor': r[1],
+            'action': r[2],
+            'target_type': r[3],
+            'target_id': r[4],
+            'details': json.loads(r[5]) if r[5] else None
+        } for r in rows])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/audit/stats', methods=['GET'])
+def get_audit_stats():
+    """Get audit statistics"""
+    try:
+        conn = sqlite3.connect(AUDIT_DB)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM audit_log')
+        total = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT action, COUNT(*) FROM audit_log GROUP BY action')
+        actions = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        cursor.execute('SELECT actor, COUNT(*) FROM audit_log GROUP BY actor')
+        actors = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        conn.close()
+        
+        return jsonify({
+            'total_entries': total,
+            'actions': actions,
+            'actors': actors
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
+    # Initialize audit database
+    try:
+        conn = sqlite3.connect(AUDIT_DB)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                actor TEXT NOT NULL,
+                action TEXT NOT NULL,
+                target_type TEXT,
+                target_id TEXT,
+                old_value TEXT,
+                new_value TEXT,
+                details TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        print(f"🔍 Audit database initialized: {AUDIT_DB}")
+    except Exception as e:
+        print(f"Audit init error: {e}")
+    
     print("🚀 Starting Cosmo Dashboard Server v27 (WebSocket Enabled)...")
     print(f"📊 Database: {DB_PATH}")
     print(f"🔔 Notifications: {NOTIFICATIONS_FILE}")
     print(f"🐙 GitHub Approval: {PENDING_COMMITS_FILE}")
+    print(f"🔍 Audit Log: {AUDIT_DB}")
     
     # Start background updater thread
     updater_thread = threading.Thread(target=background_updater, daemon=True)
