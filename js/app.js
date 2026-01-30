@@ -715,3 +715,145 @@ window.systemHealth = systemHealth;
 window.exportLogs = exportLogs;
 window.viewProject = viewProject;
 window.refreshTokenStats = refreshTokenStats;
+
+// ==================== GITHUB APPROVAL ====================
+
+async function refreshGitHubStatus() {
+    const btn = document.querySelector('button[onclick="refreshGitHubStatus()"]');
+    if (btn) btn.textContent = '⏳ Loading...';
+    
+    try {
+        const res = await fetch('/api/github/pending');
+        const data = await res.json();
+        
+        // Update badge
+        const badge = document.getElementById('github-pending-count');
+        const badge2 = document.getElementById('github-pending-badge');
+        if (badge) {
+            badge.textContent = data.pending;
+            badge.style.display = data.pending > 0 ? 'inline-block' : 'none';
+        }
+        if (badge2) {
+            badge2.textContent = `${data.pending} pending`;
+            badge2.className = data.pending > 0 ? 'badge badge-warning' : 'badge badge-success';
+        }
+        
+        // Update list
+        const container = document.getElementById('github-pending-list');
+        if (container) {
+            if (data.pending === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-icon">🐙</span>
+                        <p>No pending commits</p>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">All commits are up to date</span>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = data.commits.map(commit => `
+                    <div class="commit-card" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent-yellow);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div>
+                                <strong style="font-size: 1.1em;">${escapeHtml(commit.message)}</strong>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">
+                                    📁 ${commit.repo} • 🌿 ${commit.branch} • 🕐 ${new Date(commit.timestamp).toLocaleString()}
+                                </div>
+                            </div>
+                            <span class="badge badge-warning">PENDING</span>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button class="btn-primary" onclick="approveCommit('${commit.id}')" style="flex: 1;">✅ Approve & Push</button>
+                            <button class="btn-danger" onclick="rejectCommit('${commit.id}')" style="flex: 1;">❌ Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        console.log('✅ GitHub status refreshed:', data.pending, 'pending commits');
+    } catch (e) {
+        console.error('GitHub status error:', e);
+        if (btn) btn.textContent = '❌ Error';
+    }
+    
+    if (btn) btn.textContent = '🔄 Refresh Status';
+}
+
+async function approveCommit(commitId) {
+    if (!confirm('Are you sure you want to approve and push this commit to GitHub?')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/github/approve/${commitId}`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('✅ Commit approved and pushed successfully!');
+            refreshGitHubStatus();
+        } else {
+            alert('❌ Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('❌ Error approving commit: ' + e.message);
+    }
+}
+
+async function rejectCommit(commitId) {
+    if (!confirm('Are you sure you want to reject this commit? Changes will be unstaged but preserved.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/github/reject/${commitId}`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('❌ Commit rejected. Changes have been unstaged.');
+            refreshGitHubStatus();
+        } else {
+            alert('❌ Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('❌ Error rejecting commit: ' + e.message);
+    }
+}
+
+async function showGitHistory() {
+    try {
+        const res = await fetch('/api/github/history');
+        const data = await res.json();
+        
+        const content = data.commits.length > 0 
+            ? `<div style="max-height: 400px; overflow-y: auto;">${data.commits.map(c => `
+                <div style="padding: 8px; border-bottom: 1px solid var(--border-color);">
+                    <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">${c.hash}</code>
+                    <span style="margin-left: 10px;">${escapeHtml(c.message)}</span>
+                </div>
+            `).join('')}</div>`
+            : '<p>No recent commits found</p>';
+        
+        openModal('📜 Recent Git History', content);
+    } catch (e) {
+        alert('❌ Error loading git history: ' + e.message);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load GitHub status on page load
+document.addEventListener('DOMContentLoaded', () => {
+    refreshGitHubStatus();
+    // Refresh every 30 seconds
+    setInterval(refreshGitHubStatus, 30000);
+});
+
+// Export functions
+window.refreshGitHubStatus = refreshGitHubStatus;
+window.approveCommit = approveCommit;
+window.rejectCommit = rejectCommit;
+window.showGitHistory = showGitHistory;

@@ -65,6 +65,10 @@
                     <button class="nav-btn" data-view="settings">
                         <span>⚙️</span> Settings
                     </button>
+                    <button class="nav-btn" data-view="github">
+                        <span>🐙</span> GitHub Approval
+                        <span class="nav-badge" id="github-pending-count" style="display:none;">0</span>
+                    </button>
                 </nav>
                 
                 <div class="quick-actions">
@@ -510,6 +514,34 @@
                             <p>For: Social monitoring</p>
                             <p style="font-size: 0.8rem; color: var(--text-secondary);">Optional integration</p>
                         </div>
+                    </div>
+                </section>
+
+                <!-- GitHub Approval View -->
+                <section id="github-view" class="view">
+                    <div class="view-header">
+                        <h2>🐙 GitHub Approval</h2>
+                        <span class="badge badge-warning" id="github-pending-badge">0 pending</span>
+                    </div>
+                    
+                    <div class="github-intro" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: var(--text-secondary);">
+                            <strong>Approval Required:</strong> All GitHub commits must be approved before pushing to the repository.
+                            Review the pending changes below and approve or reject each commit.
+                        </p>
+                    </div>
+                    
+                    <div class="github-pending-list" id="github-pending-list">
+                        <div class="empty-state">
+                            <span class="empty-icon">🐙</span>
+                            <p>No pending commits</p>
+                            <span style="color: var(--text-secondary); font-size: 0.9rem;">All commits are up to date</span>
+                        </div>
+                    </div>
+                    
+                    <div class="github-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="refreshGitHubStatus()">🔄 Refresh Status</button>
+                        <button class="btn-secondary" onclick="showGitHistory()">📜 View History</button>
                     </div>
                 </section>
             </div>

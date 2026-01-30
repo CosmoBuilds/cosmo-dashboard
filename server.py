@@ -502,8 +502,134 @@ def get_tokens():
             'availableModels': []
         })
 
+# GitHub Approval System
+PENDING_COMMITS_FILE = '/home/madadmin/clawd/data/pending-commits.json'
+
+def load_pending_commits():
+    """Load pending commits from file"""
+    if os.path.exists(PENDING_COMMITS_FILE):
+        try:
+            with open(PENDING_COMMITS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
+def save_pending_commits(commits):
+    """Save pending commits to file"""
+    os.makedirs(os.path.dirname(PENDING_COMMITS_FILE), exist_ok=True)
+    with open(PENDING_COMMITS_FILE, 'w') as f:
+        json.dump(commits, f, indent=2)
+
+@app.route('/api/github/pending', methods=['GET'])
+def get_pending_commits():
+    """Get list of pending commits awaiting approval"""
+    commits = load_pending_commits()
+    return jsonify({
+        'pending': len(commits),
+        'commits': commits
+    })
+
+@app.route('/api/github/approve/<commit_id>', methods=['POST'])
+def approve_commit(commit_id):
+    """Approve and push a pending commit"""
+    commits = load_pending_commits()
+    commit = next((c for c in commits if c['id'] == commit_id), None)
+    
+    if not commit:
+        return jsonify({'error': 'Commit not found'}), 404
+    
+    try:
+        # Execute the git push
+        result = subprocess.run(
+            ['git', 'push', 'origin', commit['branch']],
+            cwd=commit['repo'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode == 0:
+            # Remove from pending
+            commits = [c for c in commits if c['id'] != commit_id]
+            save_pending_commits(commits)
+            
+            # Log the approval
+            add_log('system', f"✅ GitHub commit approved and pushed: {commit['message'][:50]}...")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Commit approved and pushed successfully',
+                'output': result.stdout
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.stderr
+            }), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/github/reject/<commit_id>', methods=['POST'])
+def reject_commit(commit_id):
+    """Reject and remove a pending commit"""
+    commits = load_pending_commits()
+    commit = next((c for c in commits if c['id'] == commit_id), None)
+    
+    if not commit:
+        return jsonify({'error': 'Commit not found'}), 404
+    
+    try:
+        # Reset the commit (soft reset to keep changes)
+        subprocess.run(
+            ['git', 'reset', '--soft', 'HEAD~1'],
+            cwd=commit['repo'],
+            capture_output=True,
+            timeout=10
+        )
+        
+        # Remove from pending
+        commits = [c for c in commits if c['id'] != commit_id]
+        save_pending_commits(commits)
+        
+        # Log the rejection
+        add_log('system', f"❌ GitHub commit rejected: {commit['message'][:50]}...")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Commit rejected and changes unstaged'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/github/history', methods=['GET'])
+def get_git_history():
+    """Get recent git history"""
+    try:
+        result = subprocess.run(
+            ['git', 'log', '--oneline', '-20'],
+            cwd='/home/madadmin/clawd',
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if result.returncode == 0:
+            commits = []
+            for line in result.stdout.strip().split('\n'):
+                if line:
+                    hash_code = line[:7]
+                    message = line[8:]
+                    commits.append({'hash': hash_code, 'message': message})
+            return jsonify({'commits': commits})
+        else:
+            return jsonify({'commits': [], 'error': result.stderr})
+    except Exception as e:
+        return jsonify({'commits': [], 'error': str(e)})
+
 if __name__ == '__main__':
     print("🚀 Starting Cosmo Dashboard Server...")
     print(f"📊 Database: {DB_PATH}")
     print(f"🔔 Notifications: {NOTIFICATIONS_FILE}")
+    print(f"🐙 GitHub Approval: {PENDING_COMMITS_FILE}")
     app.run(host='0.0.0.0', port=8095, debug=False)
