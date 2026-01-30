@@ -496,13 +496,14 @@ function renderLogs() {
     if (!container) return;
     
     container.innerHTML = state.logs.map(log => {
-        const time = new Date(log.time).toLocaleTimeString('en-US', {
+        const dateTime = new Date(log.time).toLocaleString('en-US', {
             timeZone: 'America/New_York',
+            month: 'short', day: 'numeric',
             hour: '2-digit', minute: '2-digit'
         });
         return `
             <div class="log-entry">
-                <span class="log-time">${time}</span>
+                <span class="log-time">${dateTime}</span>
                 <span class="log-type ${log.type}">${log.type.toUpperCase()}</span>
                 <span>${log.message}</span>
             </div>
@@ -935,7 +936,7 @@ function showActivityNotification(activity) {
         <div class="toast-content">
             <span class="toast-type">${getActivityIcon(activity.type)}</span>
             <span class="toast-message">${escapeHtml(activity.message).substring(0, 80)}${activity.message.length > 80 ? '...' : ''}</span>
-            <span class="toast-time">${new Date(activity.time).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+            <span class="toast-time">${new Date(activity.time).toLocaleString('en-US', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</span>
         </div>
     `;
     
