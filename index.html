@@ -483,11 +483,12 @@
                         
                         <div style="margin-top: 20px;">
                             <h4>🎯 Quick Access</h4>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; align-items: center;">
                                 <button class="btn-secondary" onclick="queryStarWars('eras')">View Eras</button>
                                 <button class="btn-secondary" onclick="queryStarWars('characters')">View Characters</button>
                                 <button class="btn-secondary" onclick="queryStarWars('factions')">View Factions</button>
-                                <button class="btn-secondary" onclick="queryStarWars('darth-maul')">🔴 Darth Maul</button>
+                                <input type="text" id="sw-search" placeholder="Search character..." style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary);">
+                                <button class="btn-primary" onclick="searchStarWarsCharacter()">🔍 Search</button>
                             </div>
                         </div>
                         

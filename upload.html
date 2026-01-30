@@ -267,21 +267,30 @@
         
         <div class="file-list" id="file-list"></div>
         
+        <!-- UPLOADED FILES SECTION -->
         <div class="recent-files" id="recent-files" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>📋 Recently Uploaded</h2>
+                <h2>📋 Recently Uploaded Files</h2>
                 <button onclick="loadRecentFiles()" style="background: #60a5fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🔄 Refresh</button>
             </div>
             <div id="recent-list"></div>
         </div>
         
-        <div class="recent-files" id="backups-section" style="display: none; margin-top: 3rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>💾 System Backups (Bowz & Nebula Only)</h2>
-                <button onclick="loadBackups()" style="background: #60a5fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🔄 Refresh</button>
+        <!-- SEPARATOR -->
+        <hr style="border: none; border-top: 2px solid #334155; margin: 3rem 0;">
+        
+        <!-- BACKUPS SECTION -->
+        <div class="recent-files" id="backups-section" style="display: none;">
+            <div style="background: rgba(96, 165, 250, 0.05); border: 1px solid #334155; border-radius: 12px; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="color: #60a5fa;">💾 System Backups</h2>
+                    <button onclick="loadBackups()" style="background: #60a5fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🔄 Refresh</button>
+                </div>
+                <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.9rem;">Download Cosmo Dashboard backups (code + database)</p>
+                <div id="backups-list" style="min-height: 50px;">
+                    <p style="color: #64748b; padding: 20px; text-align: center;">Click Refresh to load backups...</p>
+                </div>
             </div>
-            <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.9rem;">Download code and database backups</p>
-            <div id="backups-list"></div>
         </div>
     </div>
 
@@ -464,13 +473,18 @@
             
             const item = document.createElement('div');
             item.className = 'file-item';
+            item.style.cursor = 'pointer';
+            // Extract filename from path for download
+            const filename = path.split('/').pop();
+            item.onclick = () => window.location.href = `/api/download/${filename}`;
+            
             item.innerHTML = `
                 <span class="file-icon">${getFileIcon(name)}</span>
                 <div class="file-info">
                     <div class="file-name">${escapeHtml(name)}</div>
                     <div class="file-size">${size}</div>
                 </div>
-                <span class="file-status status-done">✓ Received</span>
+                <span class="file-status status-done">⬇️ Download</span>
             `;
             
             recentList.insertBefore(item, recentList.firstChild);
@@ -515,17 +529,19 @@
         // Load backups
         function loadBackups() {
             console.log('Loading backups...');
+            const backupsSection = document.getElementById('backups-section');
+            const backupsList = document.getElementById('backups-list');
+            backupsSection.style.display = 'block';
+            backupsList.innerHTML = '<p style="color: #64748b; padding: 20px; text-align: center;">⏳ Loading backups...</p>';
+            
             fetch('/api/backups')
                 .then(r => r.json())
                 .then(data => {
                     console.log('Backups data:', data);
-                    const backupsSection = document.getElementById('backups-section');
-                    const backupsList = document.getElementById('backups-list');
-                    backupsSection.style.display = 'block';
                     backupsList.innerHTML = '';
                     
                     if (!data.backups || data.backups.length === 0) {
-                        backupsList.innerHTML = '<p style="color: #94a3b8; padding: 20px;">No backups available</p>';
+                        backupsList.innerHTML = '<p style="color: #94a3b8; padding: 20px; text-align: center;">No backups available</p>';
                         return;
                     }
                     

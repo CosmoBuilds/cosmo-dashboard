@@ -1155,7 +1155,7 @@ async function loadStarWarsStats() {
     }
 }
 
-async function queryStarWars(query) {
+async function queryStarWars(query, searchName = null) {
     const resultsDiv = document.getElementById('starwars-query-results');
     if (!resultsDiv) return;
     
@@ -1164,8 +1164,8 @@ async function queryStarWars(query) {
     
     try {
         let endpoint;
-        if (query === 'darth-maul') {
-            endpoint = '/api/starwars/character/Darth Maul';
+        if (query === 'character' && searchName) {
+            endpoint = `/api/starwars/character/${encodeURIComponent(searchName)}`;
         } else {
             endpoint = `/api/starwars/${query}`;
         }
@@ -1213,6 +1213,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.queryStarWars = queryStarWars;
 window.loadStarWarsStats = loadStarWarsStats;
+
+async function searchStarWarsCharacter() {
+    const searchInput = document.getElementById('sw-search');
+    const name = searchInput.value.trim();
+    if (!name) {
+        alert('Enter a character name to search');
+        return;
+    }
+    await queryStarWars('character', name);
+}
+
+window.searchStarWarsCharacter = searchStarWarsCharacter;
 
 // ==================== SUB-AGENT MONITORING ====================
 
