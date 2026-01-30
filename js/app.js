@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchSystemStatus();
     setInterval(fetchSystemStatus, 30000);
     refreshUptime(); // Load uptime data on startup
+    refreshTokenStats(); // Load token stats on startup
+    setInterval(refreshTokenStats, 5000); // Auto-refresh every 5 seconds
+    refreshSubagents(); // Load subagents on startup
 });
 
 // Navigation
@@ -38,6 +41,13 @@ function initNavigation() {
 function switchView(viewName) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(`${viewName}-view`).classList.add('active');
+    
+    // Refresh specific views when switched to
+    if (viewName === 'agents') {
+        refreshSubagents();
+    } else if (viewName === 'tokens') {
+        refreshTokenStats();
+    }
 }
 
 // Time - EST timezone
@@ -271,8 +281,13 @@ async function submitIdea(e) {
 }
 
 async function approveIdea(id) {
-    const idea = state.ideas.find(i => i.id === id);
-    if (!idea) return;
+    // Handle both string and number IDs
+    const idea = state.ideas.find(i => String(i.id) === String(id));
+    if (!idea) {
+        console.error('Idea not found:', id);
+        alert('Error: Idea not found');
+        return;
+    }
     
     const plan = generatePlan(idea);
     
@@ -287,9 +302,15 @@ async function approveIdea(id) {
             idea.status = 'approved';
             renderIdeas();
             console.log('✅ Idea approved and notification sent');
+            alert('✅ Idea approved successfully!');
+        } else {
+            const errorData = await response.json();
+            console.error('Server error:', errorData);
+            alert('❌ Error: ' + (errorData.error || 'Failed to approve idea'));
         }
     } catch (err) {
         console.error('Error approving idea:', err);
+        alert('❌ Error approving idea: ' + err.message);
     }
 }
 
@@ -623,7 +644,11 @@ async function refreshTokenStats() {
     let tokenStats;
     try {
         const response = await fetch('/api/tokens');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         tokenStats = await response.json();
+        console.log('Token stats received:', tokenStats);
     } catch (e) {
         console.error('Error fetching token stats:', e);
         tokenStats = {
@@ -636,12 +661,6 @@ async function refreshTokenStats() {
             availableModels: []
         };
     }
-    
-    // Format numbers for display
-    const formatK = (num) => {
-        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-        return num.toString();
-    };
     
     // Update summary cards
     const todayTokensEl = document.getElementById('today-tokens');
@@ -672,27 +691,135 @@ async function refreshTokenStats() {
     
     // Update sessions with progress bars
     const sessionsList = document.getElementById('recent-sessions');
-    if (sessionsList && tokenStats.sessions && tokenStats.sessions.length > 0) {
-        sessionsList.innerHTML = tokenStats.sessions.map(session => `
-            <div class="session-item ${session.status}">
+    console.log('Sessions list element:', sessionsList);
+    console.log('Token stats sessions:', tokenStats.sessions);
+    
+    if (sessionsList && tokenStats.sessions && Array.isArray(tokenStats.sessions) && tokenStats.sessions.length > 0) {
+        const sessionsHtml = tokenStats.sessions.map(session => {
+            const percentUsed = session.percentUsed || 0;
+            const tokensUsed = session.tokensUsed || 0;
+            const tokensLimit = session.tokensLimit || 262144;
+            const name = session.name || 'Unknown';
+            const provider = session.provider || 'unknown';
+            const model = session.model || 'unknown';
+            const status = session.status || 'active';
+            
+            return `
+            <div class="session-item ${status}">
                 <div class="session-info">
-                    <span class="session-agent">${session.name}</span>
-                    <span class="session-model">${session.provider}/${session.model}</span>
+                    <span class="session-agent">${name}</span>
+                    <span class="session-model">${provider}/${model}</span>
                 </div>
                 <div class="session-usage">
                     <div class="usage-bar-container">
-                        <div class="usage-bar" style="width: ${session.percentUsed}%"></div>
+                        <div class="usage-bar" style="width: ${Math.min(percentUsed, 100)}%"></div>
                     </div>
-                    <span class="usage-text">${formatK(session.tokensUsed)}/${formatK(session.tokensLimit)} (${session.percentUsed}%)</span>
+                    <span class="usage-text">${formatK(tokensUsed)}/${formatK(tokensLimit)} (${percentUsed.toFixed(1)}%)</span>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
+        
+        sessionsList.innerHTML = sessionsHtml;
+        console.log('✅ Sessions rendered:', tokenStats.sessions.length);
     } else if (sessionsList) {
-        sessionsList.innerHTML = '<div class="session-item"><div class="session-info"><span class="session-agent">No active sessions</span></div></div>';
+        sessionsList.innerHTML = '<div class="session-item"><div class="session-info"><span class="session-agent">No active sessions found</span></div></div>';
+        console.log('⚠️ No sessions data available');
     }
     
     if (btn) btn.textContent = '🔄 Refresh';
     console.log('✅ Token stats refreshed');
+}
+
+// ==================== SUBAGENTS / SPAWNED WORKERS ====================
+
+// Helper function to format numbers as K
+function formatK(num) {
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
+}
+
+async function refreshSubagents() {
+    const btn = document.querySelector('button[onclick="refreshSubagents()"]');
+    if (btn) btn.textContent = '⏳ Loading...';
+    
+    console.log('🔍 Refreshing subagents...');
+    
+    try {
+        const response = await fetch('/api/tokens');
+        console.log('📡 API response status:', response.status);
+        
+        const data = await response.json();
+        console.log('📊 Raw data:', data);
+        
+        const sessions = data.sessions || [];
+        console.log('🔍 Total sessions:', sessions.length);
+        console.log('🔍 Session names:', sessions.map(s => s.name));
+        
+        const subagents = sessions.filter(s => s.name && s.name.startsWith('subagent:'));
+        console.log('⚡ Subagents found:', subagents.length);
+        console.log('⚡ Subagent names:', subagents.map(s => s.name));
+        
+        // Update count badge
+        const countBadge = document.getElementById('subagent-count');
+        console.log('🏷️ Count badge element:', countBadge);
+        if (countBadge) {
+            countBadge.textContent = subagents.length;
+            console.log('✅ Updated count badge to:', subagents.length);
+        }
+        
+        // Update list
+        const container = document.getElementById('subagents-list');
+        console.log('📦 Container element:', container);
+        if (container) {
+            if (subagents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 20px;">
+                        <span class="empty-icon">⚡</span>
+                        <p>No active spawned workers</p>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Spawn sub-agents to delegate tasks</span>
+                    </div>
+                `;
+                console.log('⚠️ No subagents to display');
+            } else {
+                const html = subagents.map(agent => {
+                    const agentId = agent.name.replace('subagent:', '').substring(0, 8);
+                    const percentUsed = agent.percentUsed || 0;
+                    
+                    return `
+                    <div class="subagent-card" style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent-purple);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div>
+                                <strong>⚡ Sub-Agent ${agentId}</strong>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem;">${agent.model}</div>
+                            </div>
+                            <span class="badge badge-success">ACTIVE</span>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <div class="usage-bar-container" style="width: 100%; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden;">
+                                <div class="usage-bar" style="width: ${Math.min(percentUsed, 100)}%; height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-blue)); border-radius: 3px;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8rem; color: var(--text-secondary);">
+                                <span>Tokens: ${formatK(agent.tokensUsed)}/${formatK(agent.tokensLimit)}</span>
+                                <span>${percentUsed.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                
+                container.innerHTML = html;
+                console.log('✅ Rendered', subagents.length, 'subagents');
+                console.log('📝 HTML length:', html.length);
+            }
+        } else {
+            console.error('❌ Container element not found!');
+        }
+    } catch (e) {
+        console.error('❌ Subagents refresh error:', e);
+    }
+    
+    if (btn) btn.textContent = '🔄 Refresh Workers';
 }
 
 console.log('🚀 Cosmo Dashboard loaded - SQLite backend');
@@ -715,6 +842,7 @@ window.systemHealth = systemHealth;
 window.exportLogs = exportLogs;
 window.viewProject = viewProject;
 window.refreshTokenStats = refreshTokenStats;
+window.refreshSubagents = refreshSubagents;
 
 // ==================== GITHUB APPROVAL ====================
 
@@ -857,3 +985,75 @@ window.refreshGitHubStatus = refreshGitHubStatus;
 window.approveCommit = approveCommit;
 window.rejectCommit = rejectCommit;
 window.showGitHistory = showGitHistory;
+
+// ==================== SUB-AGENT MONITORING ====================
+
+async function refreshSubagents() {
+    const btn = document.querySelector('button[onclick="refreshSubagents()"]');
+    if (btn) btn.textContent = '⏳ Loading...';
+    
+    try {
+        const res = await fetch('/api/subagents');
+        const data = await res.json();
+        
+        // Update badge
+        const badge = document.getElementById('subagent-count');
+        if (badge) {
+            badge.textContent = data.count;
+            badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+        }
+        
+        // Update list
+        const container = document.getElementById('subagents-list');
+        if (container) {
+            if (data.count === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 20px;">
+                        <span class="empty-icon">⚡</span>
+                        <p>No active spawned workers</p>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Spawn sub-agents to delegate tasks</span>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = data.subagents.map(agent => `
+                    <div class="subagent-card" style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent-blue);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <div>
+                                <strong style="font-size: 1.1em;">${agent.type === 'background_process' ? '📟' : '⚡'} ${agent.name || agent.id}</strong>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 3px;">
+                                    ${agent.model ? `🧠 ${agent.provider}/${agent.model}` : ''}
+                                    ${agent.pid ? `• PID: ${agent.pid}` : ''}
+                                </div>
+                            </div>
+                            <span class="badge ${agent.status === 'completed' ? 'badge-success' : agent.status === 'in_progress' ? 'badge-warning' : 'badge-info'}">${agent.status}</span>
+                        </div>
+                        ${agent.task ? `
+                        <div style="margin: 10px 0; padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                            <strong>📋 Task:</strong> ${escapeHtml(agent.task)}
+                            ${agent.description ? `<div style="margin-top: 5px; font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(agent.description)}</div>` : ''}
+                            ${agent.output_file ? `<div style="margin-top: 5px; font-size: 0.8rem; color: var(--accent-green);">📄 Output: ${escapeHtml(agent.output_file)}</div>` : ''}
+                        </div>
+                        ` : ''}
+                        ${agent.tokens_in ? `
+                        <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">
+                            <span>📥 ${formatK(agent.tokens_in)} tokens</span>
+                            <span>📤 ${formatK(agent.tokens_out)} tokens</span>
+                            <span>💾 ${formatK(agent.context_used)} context</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+        
+        console.log('✅ Subagents refreshed:', data.count, 'active workers');
+    } catch (e) {
+        console.error('Subagent refresh error:', e);
+        if (btn) btn.textContent = '❌ Error';
+    }
+    
+    if (btn) btn.textContent = '🔄 Refresh Workers';
+}
+
+// Export function
+window.refreshSubagents = refreshSubagents;
