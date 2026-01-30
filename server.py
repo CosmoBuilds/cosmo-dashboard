@@ -7,6 +7,7 @@ Handles all data persistence with proper database
 import sqlite3
 import json
 import os
+import subprocess
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -626,6 +627,97 @@ def get_git_history():
             return jsonify({'commits': [], 'error': result.stderr})
     except Exception as e:
         return jsonify({'commits': [], 'error': str(e)})
+
+
+# Sub-Agent / Session Monitoring
+SUBAGENT_TASKS_FILE = '/home/madadmin/clawd/data/subagent-tasks.json'
+
+def load_subagent_tasks():
+    """Load task info for sub-agents"""
+    if os.path.exists(SUBAGENT_TASKS_FILE):
+        try:
+            with open(SUBAGENT_TASKS_FILE, 'r') as f:
+                data = json.load(f)
+                return {t['agent_id']: t for t in data.get('tasks', [])}
+        except:
+            return {}
+    return {}
+
+@app.route('/api/subagents', methods=['GET'])
+def get_subagents():
+    """Get list of active spawned sub-agents/sessions"""
+    try:
+        sessions_file = '/home/madadmin/.clawdbot/agents/main/sessions/sessions.json'
+        tasks = load_subagent_tasks()
+        subagents = []
+        
+        if os.path.exists(sessions_file):
+            with open(sessions_file, 'r') as f:
+                sessions = json.load(f)
+            
+            for session_key, session_info in sessions.items():
+                # Skip main session
+                if 'main' in session_key and 'subagent' not in session_key:
+                    continue
+                
+                # Parse session info
+                agent_type = 'subagent' if 'subagent' in session_key else 'worker'
+                session_id = session_key.split(':')[-1][:8] if ':' in session_key else session_key[:8]
+                
+                # Get task info if available
+                task_info = tasks.get(session_id, {})
+                
+                subagents.append({
+                    'id': session_id,
+                    'full_key': session_key,
+                    'type': agent_type,
+                    'model': session_info.get('model', 'unknown'),
+                    'provider': session_info.get('modelProvider', 'unknown'),
+                    'status': task_info.get('status', 'active'),
+                    'task': task_info.get('task', 'Unknown task'),
+                    'description': task_info.get('description', ''),
+                    'output_file': task_info.get('output_file', ''),
+                    'started': task_info.get('started', ''),
+                    'tokens_in': session_info.get('inputTokens', 0),
+                    'tokens_out': session_info.get('outputTokens', 0),
+                    'context_used': session_info.get('contextTokens', 0),
+                    'updated': session_info.get('lastMessageAt', 'unknown')
+                })
+        
+        # Also check for running Python processes
+        try:
+            result = subprocess.run(
+                ['ps', 'aux'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            
+            process_agents = []
+            for line in result.stdout.split('\n'):
+                if 'python3' in line and any(x in line for x in ['monitor', 'evaluator', 'email']):
+                    parts = line.split()
+                    if len(parts) > 10:
+                        pid = parts[1]
+                        cmd = ' '.join(parts[10:])[:60]
+                        process_agents.append({
+                            'id': f"proc-{pid}",
+                            'type': 'background_process',
+                            'name': cmd,
+                            'status': 'running',
+                            'pid': pid
+                        })
+            
+            subagents.extend(process_agents)
+        except:
+            pass
+        
+        return jsonify({
+            'count': len(subagents),
+            'subagents': subagents
+        })
+    except Exception as e:
+        return jsonify({'count': 0, 'subagents': [], 'error': str(e)})
 
 if __name__ == '__main__':
     print("🚀 Starting Cosmo Dashboard Server...")
