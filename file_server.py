@@ -40,22 +40,36 @@ def write_notification(notification):
     with open(NOTIFICATIONS_FILE, 'w') as f:
         json.dump(notifications, f, indent=2)
 
+from flask import make_response
+
 @app.route('/')
 def index():
     """Root serves file upload page"""
-    return send_from_directory('.', 'upload.html')
+    response = make_response(send_from_directory('.', 'upload.html'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/upload.html')
 def upload_page():
-    return send_from_directory('.', 'upload.html')
+    response = make_response(send_from_directory('.', 'upload.html'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/css/<path:path>')
 def serve_css(path):
-    return send_from_directory('css', path)
+    response = make_response(send_from_directory('css', path))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
 
 @app.route('/js/<path:path>')
 def serve_js(path):
-    return send_from_directory('js', path)
+    response = make_response(send_from_directory('js', path))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
 
 @app.route('/images/<path:path>')
 def serve_images(path):
@@ -152,6 +166,111 @@ def format_file_size(size):
             return f"{size:.1f} {unit}"
         size /= 1024.0
     return f"{size:.1f} TB"
+
+@app.route('/api/backups')
+def list_backups():
+    """List available backup files for Bowz and Nebula"""
+    try:
+        backups = []
+        
+        # Full system backups (tar.gz archives)
+        full_backup_dir = '/home/madadmin/clawd/backups'
+        if os.path.exists(full_backup_dir):
+            for f in os.listdir(full_backup_dir):
+                if f.endswith('.tar.gz') and os.path.isfile(os.path.join(full_backup_dir, f)):
+                    filepath = os.path.join(full_backup_dir, f)
+                    stat = os.stat(filepath)
+                    backups.append({
+                        'name': f,
+                        'type': 'full_backup',
+                        'size': stat.st_size,
+                        'size_formatted': format_file_size(stat.st_size),
+                        'created_at': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        'download_url': f'/api/download-full-backup/{f}'
+                    })
+        
+        # Code backups (versioned files)
+        backup_dir = '/home/madadmin/clawd/cosmo-dashboard'
+        for f in os.listdir(backup_dir):
+            if '.v' in f and os.path.isfile(os.path.join(backup_dir, f)):
+                filepath = os.path.join(backup_dir, f)
+                stat = os.stat(filepath)
+                backups.append({
+                    'name': f,
+                    'type': 'code_backup',
+                    'size': stat.st_size,
+                    'size_formatted': format_file_size(stat.st_size),
+                    'created_at': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    'download_url': f'/api/download-backup/{f}'
+                })
+        
+        # Database backup
+        db_path = '/home/madadmin/clawd/cosmo-dashboard/data/dashboard.db'
+        if os.path.exists(db_path):
+            stat = os.stat(db_path)
+            backups.append({
+                'name': 'dashboard.db',
+                'type': 'database',
+                'size': stat.st_size,
+                'size_formatted': format_file_size(stat.st_size),
+                'created_at': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                'download_url': '/api/download-backup/dashboard.db'
+            })
+        
+        backups.sort(key=lambda x: x['created_at'], reverse=True)
+        return jsonify({'backups': backups})
+    except Exception as e:
+        return jsonify({'backups': [], 'error': str(e)})
+
+@app.route('/api/download-backup/<filename>')
+def download_backup(filename):
+    """Download backup files (restricted to safe paths)"""
+    try:
+        # Security: only allow specific backup files
+        allowed_files = ['dashboard.db']
+        allowed_patterns = ['.v']
+        
+        is_allowed = filename in allowed_files or any(pattern in filename for pattern in allowed_patterns)
+        
+        if not is_allowed:
+            return jsonify({'error': 'File not allowed'}), 403
+        
+        # Determine the correct path
+        if filename == 'dashboard.db':
+            filepath = os.path.join('/home/madadmin/clawd/cosmo-dashboard/data', filename)
+        else:
+            filepath = os.path.join('/home/madadmin/clawd/cosmo-dashboard', filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+        
+        return send_from_directory(os.path.dirname(filepath), os.path.basename(filepath), as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/download-full-backup/<filename>')
+def download_full_backup(filename):
+    """Download full system backup archives"""
+    try:
+        # Security: only allow .tar.gz files from backups folder
+        if not filename.endswith('.tar.gz'):
+            return jsonify({'error': 'Invalid file type'}), 403
+        
+        backup_dir = '/home/madadmin/clawd/backups'
+        filepath = os.path.join(backup_dir, filename)
+        
+        # Security check: ensure file is within backups directory
+        real_path = os.path.realpath(filepath)
+        real_backup_dir = os.path.realpath(backup_dir)
+        if not real_path.startswith(real_backup_dir):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+        
+        return send_from_directory(backup_dir, filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting Cosmo File Transfer Server...")

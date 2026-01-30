@@ -455,6 +455,11 @@ def system_status():
             print(f"Error reading system stats: {e}")
             return jsonify({'cpu': 0, 'memory': 0, 'disk': 0})
 
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Alias for /api/system for backward compatibility"""
+    return system_status()
+
 @app.route('/api/uptime', methods=['GET'])
 def get_uptime():
     """Get uptime monitoring data for services"""

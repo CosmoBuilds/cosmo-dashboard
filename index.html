@@ -66,6 +66,9 @@
                     <button class="nav-btn" data-view="tokens">
                         <span>📊</span> Usage
                     </button>
+                    <button class="nav-btn" data-view="starwars">
+                        <span>🌌</span> Star Wars
+                    </button>
                     <button class="nav-btn" data-view="settings">
                         <span>⚙️</span> Settings
                     </button>
@@ -435,6 +438,61 @@
                                 <span class="toggle-slider"></span>
                                 <span>Alert on Failure</span>
                             </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Star Wars View -->
+                <section id="starwars-view" class="view">
+                    <div class="view-header">
+                        <h2>🌌 Star Wars Knowledge Base</h2>
+                        <span class="badge badge-info">Geetsly Research</span>
+                    </div>
+                    
+                    <div class="starwars-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="stat-card" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h3>📅 Eras</h3>
+                            <div class="stat-value" id="sw-eras">7</div>
+                            <span class="stat-label">Timeline Periods</span>
+                        </div>
+                        <div class="stat-card" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h3>👥 Characters</h3>
+                            <div class="stat-value" id="sw-characters">Loading...</div>
+                            <span class="stat-label">Database Entries</span>
+                        </div>
+                        <div class="stat-card" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h3>🏛️ Factions</h3>
+                            <div class="stat-value" id="sw-factions">Loading...</div>
+                            <span class="stat-label">Organizations</span>
+                        </div>
+                        <div class="stat-card" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h3>📺 Videos</h3>
+                            <div class="stat-value" id="sw-videos">In Progress</div>
+                            <span class="stat-label">Geetsly Catalog</span>
+                        </div>
+                    </div>
+                    
+                    <div class="starwars-content" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px;">
+                        <h3>📚 Knowledge Base Status</h3>
+                        <div id="starwars-status">
+                            <p>✅ Database Schema: Complete</p>
+                            <p>✅ Initial Data: Eras, Characters, Factions</p>
+                            <p>⏳ Geetsly Video Catalog: In Progress</p>
+                            <p>⏳ Deep Research: Expanding...</p>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <h4>🎯 Quick Access</h4>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                                <button class="btn-secondary" onclick="queryStarWars('eras')">View Eras</button>
+                                <button class="btn-secondary" onclick="queryStarWars('characters')">View Characters</button>
+                                <button class="btn-secondary" onclick="queryStarWars('factions')">View Factions</button>
+                                <button class="btn-secondary" onclick="queryStarWars('darth-maul')">🔴 Darth Maul</button>
+                            </div>
+                        </div>
+                        
+                        <div id="starwars-query-results" style="margin-top: 20px; padding: 15px; background: var(--bg-tertiary); border-radius: 8px; display: none;">
+                            <!-- Query results will appear here -->
                         </div>
                     </div>
                 </section>

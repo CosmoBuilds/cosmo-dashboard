@@ -271,6 +271,15 @@
             <h2>📋 Recently Uploaded</h2>
             <div id="recent-list"></div>
         </div>
+        
+        <div class="recent-files" id="backups-section" style="display: none; margin-top: 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>💾 System Backups (Bowz & Nebula Only)</h2>
+                <button onclick="loadBackups()" style="background: #60a5fa; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🔄 Refresh</button>
+            </div>
+            <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.9rem;">Download code and database backups</p>
+            <div id="backups-list"></div>
+        </div>
     </div>
 
     <script>
@@ -290,8 +299,9 @@
                 sessionStorage.setItem('fileDropAuth', 'true');
                 sessionStorage.setItem('fileDropUser', code);
                 
-                // Load recent files
+                // Load recent files and backups
                 loadRecentFiles();
+                loadBackups();
             } else {
                 errorEl.textContent = '❌ Invalid access code';
                 document.getElementById('access-code').value = '';
@@ -302,6 +312,7 @@
         if (sessionStorage.getItem('fileDropAuth') === 'true') {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-container').style.display = 'block';
+            loadBackups();
         }
         
         // Allow Enter key to submit
@@ -486,6 +497,60 @@
         // Load on startup if authenticated
         if (sessionStorage.getItem('fileDropAuth') === 'true') {
             loadRecentFiles();
+            loadBackups();
+        }
+        
+        // Load backups
+        function loadBackups() {
+            console.log('Loading backups...');
+            fetch('/api/backups')
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Backups data:', data);
+                    const backupsSection = document.getElementById('backups-section');
+                    const backupsList = document.getElementById('backups-list');
+                    backupsSection.style.display = 'block';
+                    backupsList.innerHTML = '';
+                    
+                    if (!data.backups || data.backups.length === 0) {
+                        backupsList.innerHTML = '<p style="color: #94a3b8; padding: 20px;">No backups available</p>';
+                        return;
+                    }
+                    
+                    data.backups.forEach(backup => {
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+                        item.style.cursor = 'pointer';
+                        item.onclick = () => window.location.href = backup.download_url;
+                        
+                        let icon = '💾';
+                        let typeLabel = 'Code Backup';
+                        if (backup.type === 'database') {
+                            icon = '🗄️';
+                            typeLabel = 'Database';
+                        } else if (backup.type === 'full_backup') {
+                            icon = '📦';
+                            typeLabel = 'FULL SYSTEM BACKUP';
+                        }
+                        
+                        const highlightStyle = backup.type === 'full_backup' ? 'background: rgba(96, 165, 250, 0.1); border-left: 3px solid #60a5fa;' : '';
+                        
+                        item.innerHTML = `
+                            <span class="file-icon">${icon}</span>
+                            <div class="file-info" style="${highlightStyle} padding-left: 10px; border-radius: 4px;">
+                                <div class="file-name">${escapeHtml(backup.name)}</div>
+                                <div class="file-size">${backup.size_formatted} • ${typeLabel}</div>
+                            </div>
+                            <span class="file-status status-done">⬇️ Download</span>
+                        `;
+                        backupsList.appendChild(item);
+                    });
+                })
+                .catch(e => {
+                    console.error('Error loading backups:', e);
+                    const backupsList = document.getElementById('backups-list');
+                    backupsList.innerHTML = '<p style="color: #ef4444; padding: 20px;">❌ Error loading backups. Check console.</p>';
+                });
         }
     </script>
 </body>

@@ -1139,6 +1139,78 @@ window.approveCommit = approveCommit;
 window.rejectCommit = rejectCommit;
 window.showGitHistory = showGitHistory;
 
+// ==================== STAR WARS KNOWLEDGE BASE ====================
+
+async function queryStarWars(query) {
+    const resultsDiv = document.getElementById('starwars-query-results');
+    if (!resultsDiv) return;
+    
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = '<p>⏳ Loading...</p>';
+    
+    // Sample data for now - will connect to real database
+    const sampleData = {
+        'eras': [
+            { name: 'Before the Republic', period: '-25,000 to -1,032 BBY', desc: 'Early galactic history, first Jedi' },
+            { name: 'Old Republic Era', period: '-1,032 to -22 BBY', desc: 'Sith Wars, Rule of Two established' },
+            { name: 'Fall of the Republic', period: '-22 to -19 BBY', desc: 'Clone Wars, Republic becomes Empire' },
+            { name: 'Imperial Era', period: '-19 BBY to 4 ABY', desc: 'Galactic Empire, Jedi Purge' },
+            { name: 'New Republic Era', period: '4 ABY to 34 ABY', desc: 'New Republic, First Order rises' }
+        ],
+        'characters': [
+            { name: 'Darth Maul', species: 'Zabrak', role: 'Sith Lord', status: 'Legend 🔴' },
+            { name: 'Darth Sidious', species: 'Human', role: 'Dark Lord', status: 'Emperor' },
+            { name: 'Obi-Wan Kenobi', species: 'Human', role: 'Jedi Master', status: 'Hero' }
+        ],
+        'factions': [
+            { name: 'Sith Order', type: 'Dark Side', leader: 'Darth Sidious' },
+            { name: 'Jedi Order', type: 'Light Side', leader: 'Yoda' },
+            { name: 'Shadow Collective', type: 'Crime Syndicate', leader: 'Darth Maul' },
+            { name: 'Crimson Dawn', type: 'Crime Syndicate', leader: 'Maul (secret)' }
+        ],
+        'darth-maul': {
+            name: 'Darth Maul',
+            born: '54 BBY',
+            died: '2 BBY',
+            species: 'Zabrak (Dathomirian)',
+            master: 'Darth Sidious',
+            lightsaber: 'Double-bladed red',
+            quote: 'He will avenge us...',
+            bio: 'Sith apprentice who survived being cut in half. Became crime lord of Shadow Collective and Crimson Dawn. Died on Tatooine in final duel with Obi-Wan Kenobi.'
+        }
+    };
+    
+    const data = sampleData[query];
+    
+    if (Array.isArray(data)) {
+        resultsDiv.innerHTML = `
+            <h4>${query.charAt(0).toUpperCase() + query.slice(1)}</h4>
+            <div style="display: grid; gap: 10px;">
+                ${data.map(item => `
+                    <div style="padding: 10px; background: var(--bg-secondary); border-radius: 6px;">
+                        ${Object.entries(item).map(([k, v]) => `
+                            <div><strong>${k}:</strong> ${v}</div>
+                        `).join('')}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (data) {
+        resultsDiv.innerHTML = `
+            <h4>🔴 ${data.name}</h4>
+            <div style="padding: 15px; background: var(--bg-secondary); border-radius: 6px;">
+                ${Object.entries(data).map(([k, v]) => `
+                    <div style="margin: 5px 0;"><strong>${k}:</strong> ${v}</div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        resultsDiv.innerHTML = '<p>❌ Query not found</p>';
+    }
+}
+
+window.queryStarWars = queryStarWars;
+
 // ==================== SUB-AGENT MONITORING ====================
 
 async function refreshSubagents() {
